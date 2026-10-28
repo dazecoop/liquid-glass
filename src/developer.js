@@ -1,15 +1,12 @@
 import hljs from "highlight.js/lib/core";
 import javascript from "highlight.js/lib/languages/javascript";
 import xml from "highlight.js/lib/languages/xml";
-import glsl from "highlight.js/lib/languages/glsl";
 import "highlight.js/styles/github-dark.css";
 
 import glassSource from "./glass.js?raw";
-import fragSource from "./glass.frag?raw";
 
 hljs.registerLanguage("javascript", javascript);
 hljs.registerLanguage("xml", xml);
-hljs.registerLanguage("glsl", glsl);
 
 const PLACEHOLDER_IMAGE = "your-image.jpg";
 
@@ -19,41 +16,31 @@ const indent = (text, spaces) =>
     .map((line) => (line ? " ".repeat(spaces) + line : line))
     .join("\n");
 
-// glass.js with the shader inlined, so it runs without a bundler
-function standaloneModule() {
-  return glassSource
-    .replace(/import fragSource from .*\n/, `const fragSource = \`\n${fragSource.trim()}\n\`;\n`)
-    .replace("export class LiquidGlass", "class LiquidGlass")
-    .trim();
-}
+// glass.js without the export, so it runs from a plain <script>
+const standaloneModule = () => glassSource.replace("export class LiquidGlass", "class LiquidGlass").trim();
 
 function snippet({ params, imageUrl }) {
-  const settings = JSON.stringify(params, null, 2).replace(/"(\w+)":/g, "$1:");
-  return `<canvas id="liquid-glass" style="display:block;width:100%;height:480px;border-radius:24px;touch-action:none"></canvas>
+  const { tint, ...lens } = params;
+  const settings = JSON.stringify(lens, null, 2).replace(/"(\w+)":/g, "$1:");
+  return `<!-- The lens refracts everything inside this element. Put your own HTML in it. -->
+<main id="liquid-glass-scene" style="position:relative;display:grid;place-items:center;height:480px;border-radius:24px;overflow:hidden;touch-action:none;background:#111 url('${imageUrl ?? PLACEHOLDER_IMAGE}') center/cover">
+  <h1 style="margin:0;font:700 72px/1 system-ui,sans-serif;color:#fff">Liquid Glass</h1>
+</main>
 
 <script type="module">
 ${indent(standaloneModule(), 2)}
 
-  const canvas = document.getElementById("liquid-glass");
-  const glass = new LiquidGlass(canvas);
+  const scene = document.getElementById("liquid-glass-scene");
+  const glass = new LiquidGlass(scene);
 
   glass.set(${indent(settings, 2).trimStart()});
 
-  const image = new Image();
-  image.crossOrigin = "anonymous"; // the image host must allow CORS
-  image.onload = () => glass.setImage(image);
-  image.src = "${imageUrl ?? PLACEHOLDER_IMAGE}";
-
-  const toLocal = (e) => {
-    const rect = canvas.getBoundingClientRect();
-    return [e.clientX - rect.left, e.clientY - rect.top];
-  };
-  canvas.addEventListener("pointermove", (e) => glass.moveTo(...toLocal(e)));
-  canvas.addEventListener("pointerdown", (e) => {
-    glass.moveTo(...toLocal(e));
+  scene.addEventListener("pointermove", (e) => glass.moveTo(e.clientX, e.clientY));
+  scene.addEventListener("pointerdown", (e) => {
+    glass.moveTo(e.clientX, e.clientY);
     glass.press(true);
   });
-  canvas.addEventListener("pointerleave", () => glass.moveTo(canvas.clientWidth / 2, canvas.clientHeight / 2));
+  scene.addEventListener("pointerleave", () => glass.show(false));
   addEventListener("pointerup", () => glass.press(false));
 </script>`;
 }
@@ -74,7 +61,6 @@ ${body}
 const TABS = {
   snippet: { language: "xml", file: "liquid-glass.html" },
   module: { language: "javascript", file: "glass.js" },
-  shader: { language: "glsl", file: "glass.frag" },
 };
 
 export function initDeveloper({ glass, getImageUrl, onToggle }) {
@@ -94,7 +80,6 @@ export function initDeveloper({ glass, getImageUrl, onToggle }) {
 
   const source = () => {
     if (activeTab === "module") return glassSource.trim();
-    if (activeTab === "shader") return fragSource.trim();
     return snippet({ params: glass.params, imageUrl: getImageUrl() });
   };
 

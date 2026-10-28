@@ -1,5 +1,6 @@
 import { LiquidGlass } from "./glass.js";
 import { initDeveloper } from "./developer.js";
+import { initFps } from "./fps.js";
 
 const pexels = (id) => `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb`;
 
@@ -21,15 +22,14 @@ const SLIDERS = [
 ];
 
 const $ = (sel) => document.querySelector(sel);
+const scene = $("#scene");
 
-let glass;
-try {
-  glass = new LiquidGlass($("#canvas"));
-} catch (err) {
-  $("#error").classList.replace("hidden", "grid");
-  $("#error p").textContent = err.message;
-  throw err;
-}
+// Almost no glass behind the dock: a hint of bend, a faint rim, no dispersion or zoom.
+// It goes first so the lens copies it with its contents already in place.
+new LiquidGlass(scene, { anchor: $("#dock"), refraction: 3, frost: 0, chroma: 0, zoom: 1, rim: 0.2, tint: "rgb(0 0 0 / 0.3)" });
+const glass = new LiquidGlass(scene);
+
+initFps($("#fps-value"), $("#fps-graph"));
 
 // Developer drawer
 
@@ -37,104 +37,20 @@ let imageUrl = null;
 const dev = initDeveloper({
   glass,
   getImageUrl: () => imageUrl,
-  onToggle: (open) => {
-    $("#overlay").toggleAttribute("data-dev", open);
-    reclamp();
-  },
+  onToggle: (open) => $("#overlay").toggleAttribute("data-dev", open),
 });
 
 // Backgrounds
 
-const loadImage = (src) =>
-  new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.decoding = "async";
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error(`Could not load ${src}`));
-    img.src = src;
-  });
+const bg = $("#bg");
+let uploadUrl;
 
-// The title is painted into the texture rather than the DOM, so the lens refracts it
-const FONT = 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
-let photo;
-
-function compose(image) {
-  const { dpr } = glass;
-  const out = document.createElement("canvas");
-  out.width = glass.canvas.width;
-  out.height = glass.canvas.height;
-  const ctx = out.getContext("2d");
-
-  const w = image.naturalWidth || image.width;
-  const h = image.naturalHeight || image.height;
-  const cover = Math.max(out.width / w, out.height / h);
-  ctx.drawImage(image, (out.width - w * cover) / 2, (out.height - h * cover) / 2, w * cover, h * cover);
-
-  ctx.scale(dpr, dpr);
-  const cw = out.width / dpr;
-  const ch = out.height / dpr;
-  const x = Math.max(16, cw * 0.055);
-
-  // Same layout as the Open Graph image: eyebrow, two-line title, subtitle
-  ctx.font = `700 100px ${FONT}`;
-  ctx.letterSpacing = "-3.3px";
-  const titleWidth = ctx.measureText("Liquid").width / 100;
-  // Fit the block between the header and the (expanded) dock
-  const narrow = cw < 640;
-  const areaTop = 64;
-  const areaBottom = ch - (narrow ? 140 : 300);
-  const size = 0.7 * Math.min((narrow ? cw - x * 2 : cw * 0.52) / titleWidth, (areaBottom - areaTop) / 2.55);
-  const top = (areaTop + areaBottom) / 2 - size * 1.14; // eyebrow baseline, centring the block
-
-  // Darken the left side so the text holds up on bright images
-  const shade = ctx.createLinearGradient(0, 0, cw, 0);
-  shade.addColorStop(0, "rgb(2 6 18 / 0.6)");
-  shade.addColorStop(0.55, "rgb(2 6 18 / 0.25)");
-  shade.addColorStop(1, "rgb(2 6 18 / 0)");
-  ctx.fillStyle = shade;
-  ctx.fillRect(0, 0, cw, ch);
-
-  ctx.shadowColor = "rgb(0 0 0 / 0.3)";
-  ctx.shadowBlur = size * 0.15;
-
-  const eyebrow = "WEBGL · ONE SHADER · NO DEPENDENCIES";
-  let eyebrowSize = size * 0.147;
-  ctx.font = `600 ${eyebrowSize}px ${FONT}`;
-  ctx.letterSpacing = `${eyebrowSize * 0.18}px`;
-  const eyebrowWidth = ctx.measureText(eyebrow).width;
-  if (eyebrowWidth > cw - x * 2) {
-    eyebrowSize *= (cw - x * 2) / eyebrowWidth;
-    ctx.font = `600 ${eyebrowSize}px ${FONT}`;
-    ctx.letterSpacing = `${eyebrowSize * 0.18}px`;
-  }
-  ctx.fillStyle = "rgb(255 255 255 / 0.6)";
-  ctx.fillText(eyebrow, x + size * 0.04, top);
-
-  ctx.font = `700 ${size}px ${FONT}`;
-  ctx.letterSpacing = `${-size * 0.033}px`;
-  ctx.fillStyle = "#fff";
-  ctx.fillText("Liquid", x, top + size);
-  ctx.fillText("Glass", x, top + size * 1.93);
-
-  ctx.font = `400 ${Math.max(15, size * 0.2)}px ${FONT}`;
-  ctx.letterSpacing = "0px";
-  ctx.fillStyle = "rgb(255 255 255 / 0.75)";
-  ctx.fillText("A refraction lens for the web", x + size * 0.04, top + size * 2.4);
-
-  return out;
+async function showImage(src) {
+  const img = new Image();
+  img.src = src;
+  await img.decode();
+  bg.src = src;
 }
-
-function showImage(image) {
-  photo = image;
-  return glass.setImage(compose(image));
-}
-
-let recomposeTimer;
-addEventListener("resize", () => {
-  clearTimeout(recomposeTimer);
-  recomposeTimer = setTimeout(() => photo && glass.setImage(compose(photo), { fade: false }), 120);
-});
 
 const backgroundsEl = $("#backgrounds");
 let currentButton;
@@ -147,21 +63,21 @@ function select(button, url = null) {
   dev.render();
 }
 
-for (const bg of BACKGROUNDS) {
+for (const item of BACKGROUNDS) {
   const button = document.createElement("button");
   button.type = "button";
   button.role = "radio";
-  button.ariaLabel = bg.label;
-  button.title = bg.label;
+  button.ariaLabel = item.label;
+  button.title = item.label;
   button.setAttribute("aria-checked", "false");
   button.className =
     "size-11 shrink-0 overflow-hidden rounded-xl ring-2 ring-transparent ring-offset-2 ring-offset-transparent transition hover:scale-105 active:scale-95 aria-checked:ring-white focus-visible:outline-none focus-visible:ring-white/70";
-  button.innerHTML = `<img src="${pexels(bg.id)}&w=120&h=120&fit=crop" alt="" class="size-full object-cover" draggable="false" />`;
-  button.addEventListener("click", async () => {
+  button.innerHTML = `<img src="${pexels(item.id)}&w=120&h=120&fit=crop" alt="" class="size-full object-cover" draggable="false" />`;
+  button.addEventListener("click", () => {
     if (button === currentButton) return;
-    const url = `${pexels(bg.id)}&w=2560`;
+    const url = `${pexels(item.id)}&w=2560`;
     select(button, url);
-    showImage(await loadImage(url));
+    showImage(url);
   });
   backgroundsEl.append(button);
 }
@@ -170,14 +86,11 @@ backgroundsEl.firstElementChild.click();
 
 async function useFile(file) {
   if (!file?.type.startsWith("image/")) return;
-  const url = URL.createObjectURL(file);
-  try {
-    const img = await loadImage(url);
-    select(null);
-    await showImage(img);
-  } finally {
-    URL.revokeObjectURL(url);
-  }
+  const previous = uploadUrl;
+  uploadUrl = URL.createObjectURL(file);
+  select(null);
+  await showImage(uploadUrl);
+  if (previous) URL.revokeObjectURL(previous);
 }
 
 $("#upload").addEventListener("change", (e) => {
@@ -216,7 +129,7 @@ for (const s of SLIDERS) {
       <label for="${id}" class="font-medium text-white/80">${s.label}</label>
       <output for="${id}" class="text-white/50 tabular-nums"></output>
     </div>
-    <input id="${id}" type="range" class="range" min="${s.min}" max="${s.max}" step="${s.step}" value="${glass.params[s.key]}" />
+    <input id="${id}" type="range" autocomplete="off" class="range" min="${s.min}" max="${s.max}" step="${s.step}" value="${glass.params[s.key]}" />
   `;
   const input = wrap.querySelector("input");
   const output = wrap.querySelector("output");
@@ -230,6 +143,7 @@ for (const s of SLIDERS) {
   update();
   slidersEl.append(wrap);
 }
+slidersEl.addEventListener("input", () => dev.render());
 
 const toggle = $("#toggle");
 const controls = $("#controls");
@@ -243,38 +157,27 @@ toggle.addEventListener("click", () => {
 // Start collapsed on small screens so the lens has room
 if (matchMedia("(max-width: 639px)").matches) toggle.click();
 
-// Pointer
+// Real buttons under the glass
+
+let clicks = 0;
+$("#count").addEventListener("click", (e) => {
+  e.currentTarget.textContent = `Clicked ${++clicks} time${clicks === 1 ? "" : "s"}`;
+});
+
+// Pointer: the lens follows everywhere, over the UI too. It ignores pointer events, so
+// everything under it stays clickable.
 
 const hint = $("#hint");
-const dock = $("[data-ui]");
 let hintTimer;
 const isUi = (e) => e.target instanceof Element && e.target.closest("[data-ui]");
 
-const drawer = $("#dev");
-
-// Keep the lens clear of the dock (and the open drawer) so changes stay visible
-const DOCK_GAP = 24;
 function moveLens(x, y) {
-  const halfWidth = (glass.params.width / 2) * 1.12; // room for the pressed scale
-  const halfHeight = (glass.params.height / 2) * 1.12;
-  const maxY = dock.getBoundingClientRect().top - halfHeight - DOCK_GAP;
-  y = Math.max(halfHeight, Math.min(y, maxY));
-  if (dev.isOpen) {
-    const maxX = innerWidth - drawer.offsetWidth - 12 - halfWidth - DOCK_GAP;
-    if (maxX > halfWidth) x = Math.min(x, maxX);
-  }
-  glass.moveTo(x, y);
-}
-function reclamp() {
-  moveLens(glass.x.target, glass.y.target);
+  glass.moveTo(Math.max(0, Math.min(x, innerWidth)), Math.max(0, Math.min(y, innerHeight)));
 }
 
-new ResizeObserver(reclamp).observe(dock);
-addEventListener("resize", reclamp);
-slidersEl.addEventListener("input", () => {
-  reclamp();
-  dev.render();
-});
+// Start over the end of the title
+const title = $("#title").getBoundingClientRect();
+moveLens(title.left + title.width * 0.62, title.top + title.height * 0.72);
 
 // Lock the lens in place with "L", so the pointer can wander off without dragging it along
 const lockButton = $("#lock");
@@ -288,15 +191,17 @@ function setLocked(value) {
 lockButton.addEventListener("click", () => setLocked(false));
 addEventListener("keydown", (e) => {
   if (e.key.toLowerCase() !== "l" || e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
+  if (e.target.matches?.("input[type=text], textarea, [contenteditable]")) return;
   setLocked(!locked);
 });
 
 addEventListener("pointermove", (e) => {
-  if (locked || isUi(e)) return;
+  if (locked) return;
   moveLens(e.clientX, e.clientY);
   hintTimer ??= setTimeout(() => hint.classList.add("opacity-0", "-translate-y-2"), 1200);
 });
 
+// Press only off the controls, so dragging a slider doesn't squash the lens
 addEventListener("pointerdown", (e) => {
   if (locked || isUi(e)) return;
   moveLens(e.clientX, e.clientY);

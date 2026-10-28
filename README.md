@@ -1,15 +1,16 @@
 # Liquid Glass
 
-A WebGL "liquid glass" lens that refracts, frosts and splits the light of whatever sits behind it. Move your cursor (or drag on touch) and the lens follows with spring physics, stretching as it moves.
+A "liquid glass" lens that refracts, frosts and splits the light of real HTML behind it: text, buttons, inputs, images. Move your cursor (or drag on touch) and the lens follows with spring physics, stretching as it moves. Everything under it stays selectable and clickable.
 
-Built with vanilla JavaScript, a single fragment shader, [Vite](https://vite.dev) and [Tailwind CSS](https://tailwindcss.com).
+Built with vanilla JavaScript, SVG filters, [Vite](https://vite.dev) and [Tailwind CSS](https://tailwindcss.com).
 
 ![Liquid Glass lens over a night-sky lake scene, with the tuning controls below](docs/screenshot.png)
 
 ## Features
 
-- Rounded-rectangle lens with a curved, refracting rim
+- Rounded-rectangle lens with a curved, refracting rim, over live HTML
 - Frosted blur, chromatic dispersion, rim lighting and a soft drop shadow
+- Glass can also sit behind an element as its background (the demo's dock)
 - Spring-driven movement with squash and stretch, plus a press effect
 - Press <kbd>L</kbd> to lock the lens in place (handy for screenshots)
 - Live controls for size, corners, refraction, frost and dispersion
@@ -17,9 +18,22 @@ Built with vanilla JavaScript, a single fragment shader, [Vite](https://vite.dev
 - Developer panel that generates a drop-in snippet with your current settings
 - Retina aware, touch friendly, keyboard nudging, respects `prefers-reduced-motion`
 
+## How it works
+
+`backdrop-filter: url(#svg-filter)` would refract whatever is behind an element, but only Chrome supports it. Instead, the lens holds a copy of the page, lined up with the original, and bends that copy with an SVG displacement filter. Plain `filter: url()` works in every browser. The displacement map and rim lighting are generated from a signed-distance rounded rectangle with a circular bevel.
+
+The copy refreshes whenever the page changes (a `MutationObserver` plus input and scroll events). It is `inert` and `aria-hidden`, so it doesn't affect find-in-page, focus or screen readers.
+
+Safari needs two workarounds, both handled in [`src/glass.js`](src/glass.js):
+
+- It drops an SVG filter when the filtered content contains GPU-composited layers, so the copy has `backdrop-filter`, `will-change` and animations stripped.
+- It scales transformed content inside an SVG filter wrongly on retina screens, so the copy is positioned with `left`/`top` and the zoom is built into the displacement map.
+
 ## Browser support
 
-Works in Chrome, Firefox and Safari, on desktop and mobile. It needs WebGL, and shows a message instead of the lens if WebGL is unavailable.
+Chrome, Firefox and Safari, on desktop and mobile.
+
+Limitations of the copy: it doesn't show hover or focus states, `backdrop-filter` blur inside it is dropped (see above), and WebGL canvases and `<video>` aren't copied. IDs are removed from the copy so they stay unique, so style content inside the source with classes rather than `#id` selectors.
 
 ## Getting started
 
@@ -34,56 +48,56 @@ npm works too: `npm install && npm run dev`.
 
 ## Use it on your own site
 
-Open the **Developer** tab on the right edge of the demo, tune the lens, then copy or download the snippet. It's a `<canvas>` plus a script with no dependencies and no build step.
+Open the **Developer** tab on the right edge of the demo, tune the lens, then copy or download the snippet. It's an element to put your HTML in, plus a script with no dependencies and no build step.
 
-If you use a bundler, copy [`src/glass.js`](src/glass.js) and [`src/glass.frag`](src/glass.frag) into your project instead:
+If you use a bundler, copy [`src/glass.js`](src/glass.js) into your project instead:
 
 ```js
 import { LiquidGlass } from "./glass.js";
 
-const canvas = document.querySelector("canvas");
-const glass = new LiquidGlass(canvas);
+// The lens refracts everything inside this element
+const scene = document.querySelector("main");
+const glass = new LiquidGlass(scene);
 
 glass.set({ width: 280, height: 180, radius: 64 });
 
-const image = new Image();
-image.crossOrigin = "anonymous";
-image.onload = () => glass.setImage(image);
-image.src = "/your-image.jpg";
-
-canvas.addEventListener("pointermove", (e) => {
-  const rect = canvas.getBoundingClientRect();
-  glass.moveTo(e.clientX - rect.left, e.clientY - rect.top);
-});
+addEventListener("pointermove", (e) => glass.moveTo(e.clientX, e.clientY));
+addEventListener("pointerdown", () => glass.press(true));
+addEventListener("pointerup", () => glass.press(false));
 ```
 
-The canvas sizes itself to its CSS box, so give it a width and height. Images from another origin must be served with CORS headers.
+To give an element a glass background instead, anchor the glass to it:
+
+```js
+new LiquidGlass(scene, { anchor: document.querySelector("#panel"), refraction: 12, chroma: 0 });
+```
 
 ### API
 
 | Method | Description |
 | --- | --- |
-| `new LiquidGlass(canvas)` | Sets up WebGL on the canvas. Throws if WebGL is unavailable. |
+| `new LiquidGlass(source, options)` | Creates a lens over `source`. Pass `{ anchor: element }` to fill that element instead, plus any parameters below. |
 | `set(params)` | Updates any of the parameters below. |
-| `setImage(image)` | Fades to a new `HTMLImageElement` or canvas. Large images are downscaled. |
-| `moveTo(x, y)` | Moves the lens to a point in CSS pixels, relative to the canvas. |
+| `moveTo(x, y)` | Moves the lens to a point in viewport (client) coordinates. |
 | `press(down)` | Grows the lens slightly while `true`. |
+| `show(visible)` | Fades the lens in or out. `moveTo` shows it again. |
 
 | Parameter | Default | Description |
 | --- | --- | --- |
-| `width`, `height` | `280`, `180` | Lens size in CSS pixels |
-| `radius` | `64` | Corner radius in CSS pixels |
-| `refraction` | `40` | How far the rim bends the image, in CSS pixels |
+| `width`, `height` | `280`, `180` | Lens size in CSS pixels (anchored glass takes its anchor's size) |
+| `radius` | `64` | Corner radius in CSS pixels (anchored glass takes its anchor's) |
+| `refraction` | `40` | How far the rim bends the content, in CSS pixels |
 | `frost` | `2` | Blur radius in CSS pixels |
 | `chroma` | `0.4` | Chromatic dispersion at the rim, `0` to `1` |
 | `zoom` | `1.08` | Magnification across the whole lens |
+| `tint` | `""` | A CSS colour laid over the glass, for legibility |
+| `rim` | `1` | Strength of the rim lighting and edge hairline, `0` to `1` |
 
 ## Project structure
 
 ```
 index.html          Page and UI markup (Tailwind)
-src/glass.frag      Fragment shader: lens shape, refraction, frost, lighting
-src/glass.js        LiquidGlass renderer and spring physics
+src/glass.js        LiquidGlass: the copy, SVG filter, displacement map and spring physics
 src/main.js         Demo UI: backgrounds, sliders, pointer handling
 src/developer.js    Developer panel and snippet generator
 src/style.css       Tailwind entry and custom slider styles
