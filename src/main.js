@@ -55,6 +55,87 @@ const loadImage = (src) =>
     img.src = src;
   });
 
+// The title is painted into the texture rather than the DOM, so the lens refracts it
+const FONT = 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
+let photo;
+
+function compose(image) {
+  const { dpr } = glass;
+  const out = document.createElement("canvas");
+  out.width = glass.canvas.width;
+  out.height = glass.canvas.height;
+  const ctx = out.getContext("2d");
+
+  const w = image.naturalWidth || image.width;
+  const h = image.naturalHeight || image.height;
+  const cover = Math.max(out.width / w, out.height / h);
+  ctx.drawImage(image, (out.width - w * cover) / 2, (out.height - h * cover) / 2, w * cover, h * cover);
+
+  ctx.scale(dpr, dpr);
+  const cw = out.width / dpr;
+  const ch = out.height / dpr;
+  const x = Math.max(16, cw * 0.055);
+
+  // Same layout as the Open Graph image: eyebrow, two-line title, subtitle
+  ctx.font = `700 100px ${FONT}`;
+  ctx.letterSpacing = "-3.3px";
+  const titleWidth = ctx.measureText("Liquid").width / 100;
+  // Fit the block between the header and the (expanded) dock
+  const narrow = cw < 640;
+  const areaTop = 64;
+  const areaBottom = ch - (narrow ? 140 : 300);
+  const size = 0.7 * Math.min((narrow ? cw - x * 2 : cw * 0.52) / titleWidth, (areaBottom - areaTop) / 2.55);
+  const top = (areaTop + areaBottom) / 2 - size * 1.14; // eyebrow baseline, centring the block
+
+  // Darken the left side so the text holds up on bright images
+  const shade = ctx.createLinearGradient(0, 0, cw, 0);
+  shade.addColorStop(0, "rgb(2 6 18 / 0.6)");
+  shade.addColorStop(0.55, "rgb(2 6 18 / 0.25)");
+  shade.addColorStop(1, "rgb(2 6 18 / 0)");
+  ctx.fillStyle = shade;
+  ctx.fillRect(0, 0, cw, ch);
+
+  ctx.shadowColor = "rgb(0 0 0 / 0.3)";
+  ctx.shadowBlur = size * 0.15;
+
+  const eyebrow = "WEBGL · ONE SHADER · NO DEPENDENCIES";
+  let eyebrowSize = size * 0.147;
+  ctx.font = `600 ${eyebrowSize}px ${FONT}`;
+  ctx.letterSpacing = `${eyebrowSize * 0.18}px`;
+  const eyebrowWidth = ctx.measureText(eyebrow).width;
+  if (eyebrowWidth > cw - x * 2) {
+    eyebrowSize *= (cw - x * 2) / eyebrowWidth;
+    ctx.font = `600 ${eyebrowSize}px ${FONT}`;
+    ctx.letterSpacing = `${eyebrowSize * 0.18}px`;
+  }
+  ctx.fillStyle = "rgb(255 255 255 / 0.6)";
+  ctx.fillText(eyebrow, x + size * 0.04, top);
+
+  ctx.font = `700 ${size}px ${FONT}`;
+  ctx.letterSpacing = `${-size * 0.033}px`;
+  ctx.fillStyle = "#fff";
+  ctx.fillText("Liquid", x, top + size);
+  ctx.fillText("Glass", x, top + size * 1.93);
+
+  ctx.font = `400 ${Math.max(15, size * 0.2)}px ${FONT}`;
+  ctx.letterSpacing = "0px";
+  ctx.fillStyle = "rgb(255 255 255 / 0.75)";
+  ctx.fillText("A refraction lens for the web", x + size * 0.04, top + size * 2.4);
+
+  return out;
+}
+
+function showImage(image) {
+  photo = image;
+  return glass.setImage(compose(image));
+}
+
+let recomposeTimer;
+addEventListener("resize", () => {
+  clearTimeout(recomposeTimer);
+  recomposeTimer = setTimeout(() => photo && glass.setImage(compose(photo), { fade: false }), 120);
+});
+
 const backgroundsEl = $("#backgrounds");
 let currentButton;
 
@@ -80,7 +161,7 @@ for (const bg of BACKGROUNDS) {
     if (button === currentButton) return;
     const url = `${pexels(bg.id)}&w=2560`;
     select(button, url);
-    glass.setImage(await loadImage(url));
+    showImage(await loadImage(url));
   });
   backgroundsEl.append(button);
 }
@@ -93,7 +174,7 @@ async function useFile(file) {
   try {
     const img = await loadImage(url);
     select(null);
-    await glass.setImage(img);
+    await showImage(img);
   } finally {
     URL.revokeObjectURL(url);
   }

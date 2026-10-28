@@ -128,10 +128,12 @@ export class LiquidGlass {
     this.dirty = true;
   }
 
-  // Fades out, swaps the texture, fades back in
-  async setImage(source) {
-    this.opacity.target = 0;
-    await new Promise((r) => setTimeout(r, this.reducedMotion ? 0 : 220));
+  // Fades out, swaps the texture, fades back in. Pass { fade: false } to swap in place.
+  async setImage(source, { fade = true } = {}) {
+    if (fade) {
+      this.opacity.target = 0;
+      await new Promise((r) => setTimeout(r, this.reducedMotion ? 0 : 220));
+    }
 
     const { gl } = this;
     const w = source.naturalWidth || source.width;
@@ -150,7 +152,7 @@ export class LiquidGlass {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, upload);
     this.imageSize = [upload.width, upload.height];
 
-    if (this.reducedMotion) this.opacity.snap(1);
+    if (this.reducedMotion || !fade) this.opacity.snap(1);
     else this.opacity.target = 1;
     this.dirty = true;
   }
