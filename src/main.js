@@ -195,14 +195,29 @@ slidersEl.addEventListener("input", () => {
   dev.render();
 });
 
+// Lock the lens in place with "L", so the pointer can wander off without dragging it along
+const lockButton = $("#lock");
+let locked = false;
+function setLocked(value) {
+  locked = value;
+  lockButton.toggleAttribute("data-locked", locked);
+  lockButton.inert = !locked;
+  if (locked) glass.press(false);
+}
+lockButton.addEventListener("click", () => setLocked(false));
+addEventListener("keydown", (e) => {
+  if (e.key.toLowerCase() !== "l" || e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
+  setLocked(!locked);
+});
+
 addEventListener("pointermove", (e) => {
-  if (isUi(e)) return;
+  if (locked || isUi(e)) return;
   moveLens(e.clientX, e.clientY);
   hintTimer ??= setTimeout(() => hint.classList.add("opacity-0", "-translate-y-2"), 1200);
 });
 
 addEventListener("pointerdown", (e) => {
-  if (isUi(e)) return;
+  if (locked || isUi(e)) return;
   moveLens(e.clientX, e.clientY);
   glass.press(true);
 });

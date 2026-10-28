@@ -4,15 +4,22 @@ A WebGL "liquid glass" lens that refracts, frosts and splits the light of whatev
 
 Built with vanilla JavaScript, a single fragment shader, [Vite](https://vite.dev) and [Tailwind CSS](https://tailwindcss.com).
 
+![Liquid Glass lens over a night-sky lake scene, with the tuning controls below](docs/screenshot.png)
+
 ## Features
 
 - Rounded-rectangle lens with a curved, refracting rim
 - Frosted blur, chromatic dispersion, rim lighting and a soft drop shadow
 - Spring-driven movement with squash and stretch, plus a press effect
+- Press <kbd>L</kbd> to lock the lens in place (handy for screenshots)
 - Live controls for size, corners, refraction, frost and dispersion
 - Built-in backgrounds, or upload / drag and drop your own image
 - Developer panel that generates a drop-in snippet with your current settings
 - Retina aware, touch friendly, keyboard nudging, respects `prefers-reduced-motion`
+
+## Browser support
+
+Works in Chrome, Firefox and Safari, on desktop and mobile. It needs WebGL, and shows a message instead of the lens if WebGL is unavailable.
 
 ## Getting started
 
