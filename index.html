@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#000000" />
+    <title>Liquid Glass</title>
+    <link rel="preconnect" href="https://images.pexels.com" />
+    <link rel="stylesheet" href="/src/style.css" />
+    <script type="module" src="/src/main.js"></script>
+  </head>
+  <body class="h-dvh overflow-hidden bg-black font-sans text-white antialiased select-none">
+    <canvas id="canvas" class="fixed inset-0 h-full w-full touch-none" aria-label="Background image seen through a movable glass lens"></canvas>
+
+    <div id="overlay" class="pointer-events-none fixed inset-0 flex flex-col justify-between p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] transition-[padding] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none sm:p-6 lg:data-dev:pr-118">
+      <!-- Header -->
+      <header class="flex items-start justify-between gap-4">
+        <div class="text-shadow-lg/30">
+          <h1 class="text-lg font-semibold tracking-tight">Liquid Glass</h1>
+          <p class="hidden text-sm text-white/70 sm:block">A WebGL refraction lens</p>
+        </div>
+        <p id="hint" class="glass rounded-full px-4 py-2 text-sm whitespace-nowrap text-white/90 transition duration-700">
+          <span class="pointer-fine:inline hidden">Move your cursor, click to press</span>
+          <span class="pointer-coarse:inline hidden">Drag to move the lens</span>
+        </p>
+      </header>
+
+      <div class="flex flex-col items-center gap-3">
+      <!-- Dock -->
+      <section data-ui class="glass pointer-events-auto mx-auto w-full max-w-3xl rounded-[28px] p-3 sm:p-4">
+        <div class="flex items-center gap-2">
+          <div id="backgrounds" class="-m-1 flex flex-1 items-center gap-2 overflow-x-auto p-1 [scrollbar-width:none]" role="radiogroup" aria-label="Background"></div>
+
+          <label class="grid size-11 shrink-0 cursor-pointer place-items-center rounded-xl border border-dashed border-white/30 text-white/70 transition hover:border-white/60 hover:text-white focus-within:outline-2 focus-within:outline-white" title="Upload your own image">
+            <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+            <span class="sr-only">Upload your own image</span>
+            <input id="upload" type="file" accept="image/*" class="sr-only" />
+          </label>
+
+          <button id="toggle" type="button" class="ml-1 flex h-11 shrink-0 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-white/80 transition hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-white" aria-expanded="true" aria-controls="controls">
+            Tune
+            <svg class="size-4 transition-transform duration-300 [[aria-expanded=false]_&]:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+          </button>
+        </div>
+
+        <div id="controls" class="grid grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-out data-[collapsed]:grid-rows-[0fr]">
+          <div class="overflow-hidden">
+            <div id="sliders" class="grid grid-cols-2 gap-x-5 gap-y-3 px-1 pt-4 pb-1 sm:grid-cols-3"></div>
+          </div>
+        </div>
+      </section>
+
+      <footer data-ui class="pointer-events-auto text-xs text-white/60 text-shadow-md/30">
+        Inspired by
+        <a href="https://codepen.io/shingidad/pen/jEPxMgW" target="_blank" rel="noopener noreferrer" class="font-medium text-white/85 underline decoration-white/30 underline-offset-2 transition hover:text-white hover:decoration-white">this CodePen by shingidad</a>
+      </footer>
+      </div>
+    </div>
+
+    <!-- Developer drawer -->
+    <button id="dev-open" data-ui type="button" aria-expanded="false" aria-controls="dev" class="glass fixed top-1/2 right-0 z-20 flex -translate-y-1/2 flex-col items-center gap-2.5 rounded-l-2xl rounded-r-none px-2.5 py-4 text-white/80 transition duration-300 hover:pr-3.5 hover:text-white focus-visible:outline-2 focus-visible:outline-white aria-expanded:pointer-events-none aria-expanded:translate-x-4 aria-expanded:opacity-0">
+      <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6" /></svg>
+      <span class="rotate-180 text-xs font-medium tracking-wide [writing-mode:vertical-rl]">Developer</span>
+    </button>
+
+    <aside id="dev" data-ui inert aria-labelledby="dev-title" class="glass fixed inset-y-3 right-3 z-30 flex w-[calc(100%-1.5rem)] translate-x-[calc(100%+1.5rem)] flex-col rounded-[28px] p-4 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] select-text motion-reduce:transition-none data-[open]:translate-x-0 sm:w-[28rem] sm:p-5">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 id="dev-title" class="font-semibold tracking-tight">Use it on your site</h2>
+          <p class="mt-1 text-sm text-pretty text-white/60">A drop-in snippet with your current settings. No build step, no dependencies.</p>
+        </div>
+        <button id="dev-close" type="button" class="-mt-1 -mr-1 grid size-9 shrink-0 place-items-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-white" aria-label="Close developer panel">
+          <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
+        </button>
+      </div>
+
+      <div role="tablist" aria-label="Code" class="mt-4 flex gap-1 rounded-xl bg-black/25 p-1 text-xs font-medium">
+        <button role="tab" type="button" data-tab="snippet" aria-selected="true" class="flex-1 rounded-lg px-2 py-1.5 text-white/60 transition hover:text-white aria-selected:bg-white/15 aria-selected:text-white focus-visible:outline-2 focus-visible:outline-white">Snippet</button>
+        <button role="tab" type="button" data-tab="module" aria-selected="false" tabindex="-1" class="flex-1 rounded-lg px-2 py-1.5 font-mono text-white/60 transition hover:text-white aria-selected:bg-white/15 aria-selected:text-white focus-visible:outline-2 focus-visible:outline-white">glass.js</button>
+        <button role="tab" type="button" data-tab="shader" aria-selected="false" tabindex="-1" class="flex-1 rounded-lg px-2 py-1.5 font-mono text-white/60 transition hover:text-white aria-selected:bg-white/15 aria-selected:text-white focus-visible:outline-2 focus-visible:outline-white">glass.frag</button>
+      </div>
+
+      <p id="dev-note" hidden class="mt-3 rounded-xl bg-amber-400/15 px-3 py-2 text-xs text-amber-100 ring-1 ring-amber-300/25">
+        You're using an uploaded image. Swap <code class="font-mono">your-image.jpg</code> for a URL on your site.
+      </p>
+
+      <div role="tabpanel" class="mt-3 min-h-0 flex-1 overflow-auto rounded-2xl bg-black/45 p-4 ring-1 ring-white/10 [scrollbar-color:rgb(255_255_255/0.2)_transparent] [scrollbar-width:thin]">
+        <pre class="font-mono text-[11.5px] leading-relaxed"><code id="dev-code" class="hljs"></code></pre>
+      </div>
+
+      <div class="mt-4 flex gap-2">
+        <button id="dev-copy" type="button" class="flex h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-white text-sm font-medium text-black transition hover:bg-white/90 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+          <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></svg>
+          <span aria-live="polite">Copy</span>
+        </button>
+        <button id="dev-download" type="button" class="flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-medium text-white/85 ring-1 ring-white/20 transition hover:bg-white/10 hover:text-white active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-white">
+          <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 21h14" /></svg>
+          Download
+        </button>
+      </div>
+    </aside>
+
+    <!-- Drop overlay -->
+    <div id="drop" class="pointer-events-none fixed inset-3 grid place-items-center rounded-[32px] border-2 border-dashed border-white/60 bg-black/30 opacity-0 backdrop-blur-sm transition-opacity duration-200 data-[active]:opacity-100">
+      <p class="text-lg font-medium">Drop an image to look through the glass</p>
+    </div>
+
+    <!-- Error state -->
+    <div id="error" class="fixed inset-0 hidden place-items-center p-6 text-center">
+      <p class="max-w-sm text-white/70"></p>
+    </div>
+  </body>
+</html>
