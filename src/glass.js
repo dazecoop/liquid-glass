@@ -32,8 +32,12 @@ const ARC = 0.94;
 const ARC_DROP = 1 - Math.sqrt(1 - ARC * ARC);
 // Critically damped, about 0.3s to settle: hover and press on button glass
 const UI_SPRING = { stiffness: 440, damping: 42 };
+// Pseudo-elements too: `*` doesn't match them, and a frosted ::before (a tab bar's platter) was
+// enough for iOS Safari to drop the filter
 const CLONE_CSS = `
-  [data-glass-copy], [data-glass-copy] * {
+  [data-glass-copy], [data-glass-copy] *,
+  [data-glass-copy]::before, [data-glass-copy]::after,
+  [data-glass-copy] *::before, [data-glass-copy] *::after {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     will-change: auto !important;
