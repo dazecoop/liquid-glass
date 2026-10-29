@@ -161,9 +161,11 @@ const presetsEl = $("#presets");
 const presetButtons = new Map();
 let preset = "clear";
 
+// Moving a slider leaves every preset, so the row says "Custom" rather than claiming one
 function markPreset(key) {
   preset = key;
   for (const [k, button] of presetButtons) button.setAttribute("aria-checked", String(k === key));
+  $("#preset-custom").hidden = key !== null;
 }
 
 function applyPreset(key) {
@@ -180,7 +182,7 @@ for (const p of PRESETS) {
   button.role = "radio";
   button.textContent = p.label;
   button.className =
-    "shrink-0 rounded-full px-3 py-1.5 text-xs font-medium text-white/70 transition hover:text-white active:scale-95 aria-checked:bg-white/90 aria-checked:text-black focus-visible:outline-2 focus-visible:outline-white";
+    "shrink-0 rounded-full px-3 py-1 text-white/60 transition hover:text-white aria-checked:bg-white/15 aria-checked:text-white focus-visible:outline-2 focus-visible:outline-white";
   button.addEventListener("click", () => applyPreset(p.key));
   presetButtons.set(p.key, button);
   presetsEl.append(button);
