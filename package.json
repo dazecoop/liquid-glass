@@ -1,17 +1,83 @@
 {
-  "name": "liquid-glass",
-  "version": "1.0.0",
+  "name": "@dazecoop/liquid-glass",
+  "version": "0.1.0",
+  "description": "A liquid glass lens that refracts, frosts and splits the light of real HTML behind it, plus iOS 26 style switches, tab bars and buttons. Vanilla JS, with React bindings.",
+  "keywords": [
+    "liquid-glass",
+    "glass",
+    "glassmorphism",
+    "refraction",
+    "lens",
+    "svg-filter",
+    "ios",
+    "react"
+  ],
+  "homepage": "https://glass.dazemx.com/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dazecoop/liquid-glass.git"
+  },
+  "bugs": "https://github.com/dazecoop/liquid-glass/issues",
+  "author": "David Cooper",
+  "license": "MIT",
+  "type": "module",
+  "main": "./lib/index.cjs",
+  "module": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "unpkg": "./lib/liquid-glass.global.js",
+  "jsdelivr": "./lib/liquid-glass.global.js",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./lib/index.d.ts",
+        "default": "./lib/index.js"
+      },
+      "require": {
+        "types": "./lib/index.d.cts",
+        "default": "./lib/index.cjs"
+      }
+    },
+    "./react": {
+      "import": {
+        "types": "./lib/react.d.ts",
+        "default": "./lib/react.js"
+      },
+      "require": {
+        "types": "./lib/react.d.cts",
+        "default": "./lib/react.cjs"
+      }
+    },
+    "./style.css": "./lib/liquid-glass.css",
+    "./global": "./lib/liquid-glass.global.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib"
+  ],
+  "sideEffects": [
+    "*.css"
+  ],
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "highlight.js": "^11.12.0",
+    "react": "^19",
+    "react-dom": "^19",
     "tailwindcss": "^4.3.3",
     "vite": "^7.3.7"
   },
-  "private": true,
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
-  },
-  "type": "module"
+    "preview": "vite preview",
+    "build:lib": "vite build -c vite.lib.config.js && vite build -c vite.lib.config.js --mode iife",
+    "prepublishOnly": "npm run build:lib"
+  }
 }
