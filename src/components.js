@@ -44,6 +44,8 @@ export const LOOKS = {
     light: { ...CLEAR, refraction: 28, bevel: 5, chroma: 0.12, zoom: 1.08, specular: 0.55, brightness: 0, rim: 0.6, body: 0.12 },
   },
 };
+// addEventListener bound to an AbortSignal, so a component's destroy() removes them all
+const listener = (signal) => (target, type, fn) => target.addEventListener(type, fn, { signal });
 const themeOf = (el) => (el.closest("[data-theme]")?.dataset.theme === "light" ? "light" : "dark");
 
 // A soft white glow under the finger while pressed, inside the lens (UIKit's LittleGlowView)
@@ -91,6 +93,7 @@ export class GlassSwitch {
     this.pressed = false;
     this.drag = null;
     this.frame = 0;
+    this.abort = new AbortController();
 
     this.lens = new LiquidGlass(this.bar, { container: root, ...look });
     springs(this.lens);
@@ -200,20 +203,32 @@ export class GlassSwitch {
     if (on || this.up) this.lift();
   }
 
+  // Stops it and removes its lens; the markup is left as it was found
+  destroy() {
+    cancelAnimationFrame(this.frame);
+    this.abort.abort();
+    this.lens.destroy();
+    this.root.classList.remove("glassy", "lifted", "pressing");
+    this.root.style.removeProperty("--p");
+    this.thumb.style.translate = "";
+    this.bar.style.left = this.bar.style.width = "";
+  }
+
   #events() {
     const root = this.root;
+    const on = listener(this.abort.signal);
     // A drag has already chosen, so the click that ends it is ignored
     let dragged = false;
-    root.addEventListener("click", () => {
+    on(root, "click", () => {
       if (dragged) dragged = false;
       else this.select(1 - this.value);
     });
-    root.addEventListener("pointerenter", (e) => {
+    on(root, "pointerenter", (e) => {
       if (e.pointerType !== "mouse") return;
       this.hovered = true;
       this.lift();
     });
-    root.addEventListener("pointerleave", () => {
+    on(root, "pointerleave", () => {
       this.hovered = false;
       if (!this.drag) this.lens.x.target = this.lensAt(this.centre(this.value));
       // Left before it was dragged: no pointerup will come here
@@ -222,12 +237,12 @@ export class GlassSwitch {
         this.setPressed(false);
       }
     });
-    root.addEventListener("pointerdown", (e) => {
+    on(root, "pointerdown", (e) => {
       if (e.button !== 0) return;
       this.drag = { id: e.pointerId, x: e.clientX, from: this.at, moved: false };
       this.setPressed(true, e);
     });
-    root.addEventListener("pointermove", (e) => {
+    on(root, "pointermove", (e) => {
       const d = this.drag;
       const lens = this.lens;
       if (this.pressed) this.glowAt(e);
@@ -247,7 +262,7 @@ export class GlassSwitch {
       }
       if (d.moved) lens.x.target = this.lensAt(clamp(d.from + dx, this.centre(0), this.centre(1)));
     });
-    root.addEventListener("pointerup", () => {
+    on(root, "pointerup", () => {
       const d = this.drag;
       this.drag = null;
       this.setPressed(false);
@@ -263,12 +278,12 @@ export class GlassSwitch {
         lens.x.target = this.lensAt(this.centre(side));
       } else this.select(side);
     });
-    root.addEventListener("pointercancel", () => {
+    on(root, "pointercancel", () => {
       this.drag = null;
       this.setPressed(false);
       this.lens.x.target = this.lensAt(this.centre(this.value));
     });
-    addEventListener("resize", () => {
+    on(window, "resize", () => {
       this.size();
       if (!this.up) this.put(this.centre(this.value));
     });
@@ -295,6 +310,7 @@ export class GlassTabBar {
     this.glow = root.querySelector(".lg-glow");
     this.pressedId = null;
     this.frame = 0;
+    this.abort = new AbortController();
     this.lens = new LiquidGlass(root, { container: root, ...look });
     springs(this.lens);
     this.placePill();
@@ -377,8 +393,16 @@ export class GlassTabBar {
     this.frame = requestAnimationFrame(tick);
   }
 
+  destroy() {
+    cancelAnimationFrame(this.frame);
+    this.abort.abort();
+    this.lens.destroy();
+    this.root.classList.remove("lensing", "pressing");
+  }
+
   #events() {
     const root = this.root;
+    const on = listener(this.abort.signal);
     const local = (e) => e.clientX - root.getBoundingClientRect().left - root.clientLeft;
     const clampX = (x) => clamp(x, this.centre(this.tabs[0]), this.centre(this.tabs.at(-1)));
     const tabAt = (x) =>
@@ -389,17 +413,17 @@ export class GlassTabBar {
       this.glow.style.top = `${e.clientY - r.top}px`;
     };
 
-    this.tabs.forEach((t) => t.addEventListener("click", () => this.choose(t)));
-    root.addEventListener("pointerover", (e) => {
+    this.tabs.forEach((t) => on(t, "click", () => this.choose(t)));
+    on(root, "pointerover", (e) => {
       const tab = e.target.closest("a, button");
       if (e.pointerType === "mouse" && this.pressedId === null && tab) this.lift(tab);
     });
-    root.addEventListener("pointerleave", (e) => {
+    on(root, "pointerleave", (e) => {
       if (e.pointerType === "mouse" && this.pressedId === null) this.settle(0);
     });
     // The press: where it started, over which tab, and whether it has become a drag
     let press = null;
-    root.addEventListener("pointerdown", (e) => {
+    on(root, "pointerdown", (e) => {
       if (e.button !== 0) return;
       // The tab's own click is replaced by the release, which can land elsewhere
       e.preventDefault();
@@ -413,7 +437,7 @@ export class GlassTabBar {
       glowAt(e);
       root.classList.add("pressing");
     });
-    root.addEventListener("pointermove", (e) => {
+    on(root, "pointermove", (e) => {
       if (e.pointerId !== this.pressedId) return;
       glowAt(e);
       // Past a few pixels it's a drag: the lens moves with the finger, from where it was
@@ -434,9 +458,9 @@ export class GlassTabBar {
       // Released with a mouse still over the bar: the lens stays up, hovering
       if (!(e.pointerType === "mouse" && root.matches(":hover"))) this.settle(HANG);
     };
-    root.addEventListener("pointerup", (e) => release(e, true));
-    root.addEventListener("pointercancel", (e) => release(e, false));
-    addEventListener("resize", () => this.placePill());
+    on(root, "pointerup", (e) => release(e, true));
+    on(root, "pointercancel", (e) => release(e, false));
+    on(window, "resize", () => this.placePill());
   }
 }
 
@@ -461,6 +485,7 @@ export class GlassButton {
       look = LOOKS.button[themeOf(button)],
     } = {},
   ) {
+    if (!source) throw new Error("GlassButton: no source to refract. Give the button's parent a [data-glass-source] child, or pass { source }.");
     this.btn = button;
     this.container = container;
     this.grow = grow;
@@ -470,6 +495,8 @@ export class GlassButton {
     this.pressed = false;
     this.up = false;
     this.frame = 0;
+    this.abort = new AbortController();
+    const on = listener(this.abort.signal);
     button.style.setProperty("--lit-max", lit);
     // The tint and the glow, clipped to the button's shape, behind its content
     const clip = document.createElement("span");
@@ -479,8 +506,10 @@ export class GlassButton {
     glow.className = "lg-glow";
     clip.append(glow);
     button.prepend(clip);
+    this.clip = clip;
 
     this.lens = new LiquidGlass(source, { container, ...look });
+    this.lens.el.classList.add("lg-button-lens");
     springs(this.lens);
     this.size();
     this.lens.scale.snap(1 / this.full);
@@ -494,48 +523,58 @@ export class GlassButton {
       glow.style.top = `${(e.clientY - r.top) / k}px`;
     };
     // Hovered, a fainter glow follows the pointer
-    button.addEventListener("pointerenter", (e) => {
+    on(button, "pointerenter", (e) => {
       if (e.pointerType !== "mouse") return;
       this.hovered = true;
       glowAt(e);
       button.classList.add("hovering");
       this.lift();
     });
-    button.addEventListener("pointerleave", () => {
+    on(button, "pointerleave", () => {
       this.hovered = false;
       button.classList.remove("hovering");
       this.pressed = false;
       this.lift();
       this.settle();
     });
-    button.addEventListener("pointerdown", (e) => {
+    on(button, "pointerdown", (e) => {
       if (e.button !== 0) return;
       this.pressed = true;
       glowAt(e);
       this.lift();
     });
-    button.addEventListener("pointermove", (e) => (this.pressed || this.hovered) && glowAt(e));
+    on(button, "pointermove", (e) => (this.pressed || this.hovered) && glowAt(e));
     const up = () => {
       if (!this.pressed) return;
       this.pressed = false;
       this.lift();
       this.settle();
     };
-    button.addEventListener("pointerup", up);
-    button.addEventListener("pointercancel", up);
+    on(button, "pointerup", up);
+    on(button, "pointercancel", up);
     // Keyboard: lit while focused, pressed while Space or Enter is down
-    button.addEventListener("focus", () => button.matches(":focus-visible") && this.lift());
-    button.addEventListener("blur", () => this.settle(0));
-    button.addEventListener("keydown", (e) => {
+    on(button, "focus", () => button.matches(":focus-visible") && this.lift());
+    on(button, "blur", () => this.settle(0));
+    on(button, "keydown", (e) => {
       if (e.key !== " " && e.key !== "Enter") return;
       this.pressed = true;
       this.lift();
     });
-    button.addEventListener("keyup", () => {
+    on(button, "keyup", () => {
       this.pressed = false;
       this.lift();
     });
-    addEventListener("resize", () => this.size());
+    on(window, "resize", () => this.size());
+  }
+
+  destroy() {
+    cancelAnimationFrame(this.frame);
+    cancelAnimationFrame(this.settling);
+    this.abort.abort();
+    this.lens.destroy();
+    this.clip.remove();
+    this.btn.classList.remove("hovering", "pressing");
+    for (const p of ["--lit-max", "--s", "--lit"]) this.btn.style.removeProperty(p);
   }
 
   // The lens is built at its pressed size; rest, hover and press scale it down from there
@@ -592,9 +631,12 @@ export class GlassButton {
   }
 }
 
-// Every component under `root`, from its data attributes
+// Every component under `root`, from its data attributes. Returns them, so they can be
+// destroyed together: initComponents().forEach((c) => c.destroy())
 export function initComponents(root = document) {
-  root.querySelectorAll("[data-glass-switch]").forEach((el) => new GlassSwitch(el));
-  root.querySelectorAll("[data-glass-tabs]").forEach((el) => new GlassTabBar(el));
-  root.querySelectorAll("[data-glass-button]").forEach((el) => new GlassButton(el));
+  return [
+    ...[...root.querySelectorAll("[data-glass-switch]")].map((el) => new GlassSwitch(el)),
+    ...[...root.querySelectorAll("[data-glass-tabs]")].map((el) => new GlassTabBar(el)),
+    ...[...root.querySelectorAll("[data-glass-button]")].map((el) => new GlassButton(el)),
+  ];
 }

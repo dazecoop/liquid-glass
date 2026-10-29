@@ -151,11 +151,23 @@ export class LiquidGlass {
   // The frame loop sleeps once nothing is moving or waiting to be redrawn, so an idle or
   // hidden lens costs nothing per frame or per scroll; anything that changes it wakes it
   #awake = false;
+  #raf = 0;
+  // Everything the glass listens to or watches, so destroy() can let go of it all
+  #abort = new AbortController();
+  #observers = [];
+  // Inline styles set on the anchor or container, to put back on destroy()
+  #restore = [];
   #wake() {
-    if (this.#awake) return;
+    if (this.#awake || this.destroyed) return;
     this.#awake = true;
     this.last = performance.now();
-    requestAnimationFrame((t) => this.#frame(t));
+    this.#raf = requestAnimationFrame((t) => this.#frame(t));
+  }
+
+  // Sets an inline style on an element that isn't the glass's own, remembering the old value
+  #style(el, prop, value) {
+    this.#restore.push([el, prop, el.style[prop]]);
+    el.style[prop] = value;
   }
 
   // Shown, or showing: anchored glass always is; a lens while visible or popping
@@ -178,13 +190,13 @@ export class LiquidGlass {
     this.el.style.cssText = "pointer-events:none;overflow:hidden;box-shadow:0 12px 34px -6px rgb(0 0 0 / 0.35)";
     if (this.anchor) {
       // Sit behind the anchor's content, inside its own stacking context
-      if (getComputedStyle(this.anchor).position === "static") this.anchor.style.position = "relative";
-      this.anchor.style.isolation = "isolate";
+      if (getComputedStyle(this.anchor).position === "static") this.#style(this.anchor, "position", "relative");
+      this.#style(this.anchor, "isolation", "isolate");
       this.el.style.cssText += ";position:absolute;inset:0;z-index:-1;border-radius:inherit";
     } else {
       const position = this.container ? "absolute;z-index:1" : "fixed;z-index:2147483000";
       this.el.style.cssText += `;position:${position};left:0;top:0;will-change:transform;opacity:0;transition:opacity .3s`;
-      if (this.container && getComputedStyle(this.container).position === "static") this.container.style.position = "relative";
+      if (this.container && getComputedStyle(this.container).position === "static") this.#style(this.container, "position", "relative");
     }
 
     this.frost = document.createElement("div");
@@ -206,50 +218,64 @@ export class LiquidGlass {
     document.body.append(this.svg);
     (this.anchor ?? this.container ?? document.body).prepend(this.el);
 
+    const { signal } = this.#abort;
     if (this.anchor) {
-      new ResizeObserver(() => {
+      const resize = new ResizeObserver(() => {
         this.set({
           width: this.anchor.offsetWidth,
           height: this.anchor.offsetHeight,
           radius: parseFloat(getComputedStyle(this.anchor).borderTopLeftRadius) || 0,
         });
-      }).observe(this.anchor);
+      });
+      resize.observe(this.anchor);
+      this.#observers.push(resize);
     }
 
     if (this.button) {
       // Hover brightens, press flattens the bevel and tightens the shadow
       const a = this.anchor;
       const release = () => (this.pressed.target = 0);
-      a.addEventListener("pointerenter", () => (this.hovered.target = 1));
-      a.addEventListener("pointerleave", () => {
-        this.hovered.target = 0;
-        release();
-      });
-      a.addEventListener("pointerdown", () => (this.pressed.target = 1));
-      a.addEventListener("pointerup", release);
-      a.addEventListener("pointercancel", release);
-      a.addEventListener("keydown", (e) => {
-        if (e.key === " " || e.key === "Enter") this.pressed.target = 1;
-      });
-      a.addEventListener("keyup", release);
-      a.addEventListener("blur", release);
+      a.addEventListener("pointerenter", () => (this.hovered.target = 1), { signal });
+      a.addEventListener(
+        "pointerleave",
+        () => {
+          this.hovered.target = 0;
+          release();
+        },
+        { signal },
+      );
+      a.addEventListener("pointerdown", () => (this.pressed.target = 1), { signal });
+      a.addEventListener("pointerup", release, { signal });
+      a.addEventListener("pointercancel", release, { signal });
+      a.addEventListener(
+        "keydown",
+        (e) => {
+          if (e.key === " " || e.key === "Enter") this.pressed.target = 1;
+        },
+        { signal },
+      );
+      a.addEventListener("keyup", release, { signal });
+      a.addEventListener("blur", release, { signal });
     }
   }
 
   #observe() {
+    const { signal } = this.#abort;
     const dirty = () => {
       this.copyDirty = true;
       if (this.#shown) this.#wake();
     };
     // Changes inside any glass (copies being swapped, lenses moving) don't count
-    new MutationObserver((records) => {
+    const mutations = new MutationObserver((records) => {
       // Style changes on [data-glass-skip] (something the page animates every frame, kept
       // out of the copy by its own CSS) don't count either, or the copy would re-clone per frame
       const counts = (r) =>
         !insideGlass(r.target) && !(r.type === "attributes" && r.target.closest?.("[data-glass-skip]"));
       if (records.some(counts)) dirty();
-    }).observe(this.source, { subtree: true, childList: true, attributes: true, characterData: true });
-    this.source.addEventListener("input", dirty, true);
+    });
+    mutations.observe(this.source, { subtree: true, childList: true, attributes: true, characterData: true });
+    this.#observers.push(mutations);
+    this.source.addEventListener("input", dirty, { capture: true, signal });
     this.source.addEventListener(
       "scroll",
       (e) => {
@@ -257,16 +283,16 @@ export class LiquidGlass {
         this.scrolled.add(e.target);
         dirty();
       },
-      true,
+      { capture: true, signal },
     );
-    addEventListener("resize", dirty);
+    addEventListener("resize", dirty, { signal });
     // Page scroll only moves the source, so just re-measure it
     // (a hidden lens is re-measured when it's next shown)
     addEventListener("scroll", () => {
       if (!this.#shown) return;
       this.rectDirty = true;
       this.#wake();
-    }, { passive: true });
+    }, { passive: true, signal });
   }
 
   #syncCopy() {
@@ -568,6 +594,21 @@ export class LiquidGlass {
     }
   }
 
+  // Removes the glass and everything it added to the page, and stops it listening and
+  // watching. Safe to call more than once.
+  destroy() {
+    if (this.destroyed) return;
+    this.destroyed = true;
+    cancelAnimationFrame(this.#raf);
+    this.#awake = false;
+    this.#abort.abort();
+    this.#observers.forEach((o) => o.disconnect());
+    this.el.remove();
+    this.svg.remove();
+    for (const [el, prop, value] of this.#restore.reverse()) el.style[prop] = value;
+    this.scrolled.clear();
+  }
+
   // Fades the lens in or out. With { pop: true } it pops like a bubble on the way out and
   // swells back in. The pop runs through the frame loop's own transform: a separate CSS
   // `scale` would also scale the lens's position, and it would dart away as it popped.
@@ -729,7 +770,7 @@ export class LiquidGlass {
     const buttonMoving = this.button && (!this.hovered.settled || !this.pressed.settled);
     const waiting =
       this.shapeDirty || this.rectDirty || this.placeDirty || (this.copyDirty && this.#shown) || !this.inner;
-    if (animating || buttonMoving || waiting) requestAnimationFrame((t) => this.#frame(t));
+    if (animating || buttonMoving || waiting) this.#raf = requestAnimationFrame((t) => this.#frame(t));
     else this.#awake = false;
   }
 }
