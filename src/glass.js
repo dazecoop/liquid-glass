@@ -390,7 +390,7 @@ export class LiquidGlass {
     const c = chroma * 0.35;
     const displace = (k, result) =>
       `<feDisplacementMap in="SourceGraphic" in2="map" scale="${scale * k}" xChannelSelector="R" yChannelSelector="G" result="${result}" />`;
-    this.filter.innerHTML =
+    this.filterBase =
       `<feImage href="${href}" result="map" preserveAspectRatio="none" />` +
       (c > 0.001
         ? displace(1 + c, "dr") +
@@ -401,9 +401,8 @@ export class LiquidGlass {
            <feColorMatrix in="db" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="b" />
            <feComposite in="r" in2="g" operator="arithmetic" k2="1" k3="1" result="rg" />
            <feComposite in="rg" in2="b" operator="arithmetic" k2="1" k3="1" />`
-        : displace(1, "out")) +
-      this.#tone();
-    this.displacers = [...this.filter.querySelectorAll("feDisplacementMap")].map((el) => [el, Number(el.getAttribute("scale"))]);
+        : displace(1, "out"));
+    this.#writeFilter();
 
     Object.assign(this.frost.style, {
       left: `${hw - mhw - pad}px`,
@@ -429,13 +428,15 @@ export class LiquidGlass {
     const rows = [0, 1, 2].map((i) =>
       [...LUMA.map((l, j) => l * (1 - s) + (i === j ? s : 0)), 0, b].map((v) => +v.toFixed(4)).join(" "),
     );
-    return `<feColorMatrix data-tone type="matrix" values="${rows.join("  ")}  0 0 0 1 0" />`;
+    return `<feColorMatrix type="matrix" values="${rows.join("  ")}  0 0 0 1 0" />`;
   }
 
-  // Tone is the filter's last step, so it can change without rebuilding the map
-  #retone() {
-    this.filter.querySelector("[data-tone]")?.remove();
-    this.filter.insertAdjacentHTML("beforeend", this.#tone());
+  // The whole filter is rewritten even when only the tone changes: Safari and Firefox can
+  // keep showing the old result when a step is removed from a live filter. The map, the
+  // expensive part, is reused, so a tone change stays cheap.
+  #writeFilter() {
+    this.filter.innerHTML = this.filterBase + this.#tone();
+    this.displacers = [...this.filter.querySelectorAll("feDisplacementMap")].map((el) => [el, Number(el.getAttribute("scale"))]);
   }
 
   // Frost blur, plus the button's hover and press state
@@ -507,8 +508,10 @@ export class LiquidGlass {
   set(params) {
     const toneOnly = Object.keys(params).every((k) => k === "brightness" || k === "saturation");
     Object.assign(this.params, params);
-    if (toneOnly && !this.shapeDirty && this.filter.firstChild) this.#retone();
-    else this.shapeDirty = true;
+    if (toneOnly && !this.shapeDirty && this.filterBase) {
+      this.#writeFilter();
+      this.#applyButton();
+    } else this.shapeDirty = true;
   }
 
   // Fades the lens in or out. With { pop: true } it pops like a bubble on the way out and
