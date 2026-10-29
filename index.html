@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="motion-safe:scroll-smooth">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -33,8 +33,23 @@
     <link rel="stylesheet" href="/src/style.css" />
     <script type="module" src="/src/main.js"></script>
   </head>
-  <body class="h-dvh overflow-hidden bg-black font-sans text-white antialiased select-none">
-    <main id="scene" class="fixed inset-0 overflow-hidden">
+  <body class="bg-black font-sans text-white antialiased">
+    <!-- Page nav: a translucent bar that arrives once the hero has scrolled away -->
+    <nav id="nav" aria-label="Page" inert class="material fixed inset-x-0 top-0 z-2147483002 -translate-y-full opacity-0 transition duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] data-shown:translate-y-0 data-shown:opacity-100 motion-reduce:translate-y-0 motion-reduce:transition-opacity">
+      <div class="mx-auto flex h-12 max-w-5xl items-center justify-between px-5">
+        <a href="#scene" class="text-[15px] font-semibold tracking-[-0.01em]">Liquid Glass</a>
+        <div class="flex items-center gap-5 text-xs">
+          <a href="#features" class="text-white/70 transition hover:text-white max-sm:hidden">Features</a>
+          <a href="#how" class="text-white/70 transition hover:text-white">How it works</a>
+          <a href="#compare" class="text-white/70 transition hover:text-white max-sm:hidden">Compare</a>
+          <a href="#start" class="text-white/70 transition hover:text-white">Get started</a>
+          <a href="https://github.com/dazecoop/liquid-glass" target="_blank" rel="noopener noreferrer" class="rounded-full bg-[#0071e3] px-3 py-1 font-medium text-white transition hover:bg-[#0077ed]">GitHub</a>
+        </div>
+      </div>
+    </nav>
+
+    <main>
+    <section id="scene" aria-label="Liquid glass demo" class="relative h-svh overflow-hidden select-none">
     <img id="bg" alt="" class="absolute inset-0 size-full touch-none object-cover" draggable="false" />
     <div class="absolute inset-0 touch-none bg-linear-to-r from-[rgb(2_6_18/0.6)] via-[rgb(2_6_18/0.25)] via-55% to-transparent"></div>
 
@@ -83,15 +98,21 @@
 
         <div id="controls" class="grid grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-out data-[collapsed]:grid-rows-[0fr]">
           <div class="overflow-hidden">
-            <div id="sliders" class="grid grid-cols-2 gap-x-5 gap-y-3 px-1 pt-4 pb-1 sm:grid-cols-3"></div>
+            <div class="px-1 pt-4 pb-1">
+              <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+                <div id="presets" role="radiogroup" aria-label="Preset" class="-m-1 flex gap-1 overflow-x-auto p-1 [scrollbar-width:none]"></div>
+                <div id="groups" role="tablist" aria-label="Settings" class="flex rounded-full bg-black/25 p-0.5 text-xs font-medium"></div>
+              </div>
+              <div id="sliders" class="mt-4 grid grid-cols-2 gap-x-5 gap-y-3 sm:grid-cols-4"></div>
+            </div>
           </div>
         </div>
       </section>
 
-      <footer data-ui class="pointer-events-auto text-xs text-white/60 text-shadow-md/30">
-        Inspired by
-        <a href="https://codepen.io/shingidad/pen/jEPxMgW" target="_blank" rel="noopener noreferrer" class="font-medium text-white/85 underline decoration-white/30 underline-offset-2 transition hover:text-white hover:decoration-white">this CodePen by shingidad</a>
-      </footer>
+      <a href="#features" data-ui class="pointer-events-auto flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium text-white/70 text-shadow-md/30 transition hover:text-white focus-visible:outline-2 focus-visible:outline-white">
+        Explore
+        <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+      </a>
       </div>
     </div>
 
@@ -145,13 +166,462 @@
     </aside>
 
     <!-- Drop overlay -->
-    <div id="drop" class="pointer-events-none absolute inset-3 grid place-items-center rounded-[32px] border-2 border-dashed border-white/60 bg-black/30 opacity-0 backdrop-blur-sm transition-opacity duration-200 data-[active]:opacity-100">
+    <div id="drop" class="pointer-events-none fixed inset-3 z-50 grid place-items-center rounded-[32px] border-2 border-dashed border-white/60 bg-black/30 opacity-0 backdrop-blur-sm transition-opacity duration-200 data-[active]:opacity-100">
       <p class="text-lg font-medium">Drop an image to look through the glass</p>
     </div>
+    </section>
+
+    <!-- Features. Each demo surface gets its own glass, built when the section comes near. -->
+    <section id="features" class="scroll-mt-12 px-4 pt-32 pb-24 sm:px-6 sm:pt-44">
+      <div class="mx-auto max-w-5xl">
+        <header data-reveal class="mx-auto max-w-3xl text-center">
+          <h2 class="display">Glass that bends<br />real HTML.</h2>
+          <p class="lede mx-auto mt-6 max-w-2xl">Not a screenshot, not a canvas. The lens refracts the live page, so text stays selectable and buttons stay clickable. <strong>In Chrome, Firefox and Safari.</strong></p>
+        </header>
+
+        <div class="mt-16 grid gap-4 sm:mt-20 md:grid-cols-6">
+          <!-- Light -->
+          <article data-reveal class="tile md:col-span-6">
+            <div class="flex flex-wrap items-end justify-between gap-6 p-7 sm:p-10">
+              <div class="max-w-md">
+                <p class="eyebrow">Lighting</p>
+                <h3 class="tile-title mt-2">Light that behaves like&nbsp;light.</h3>
+                <p class="tile-copy mt-3">The rim is lit as a curved surface. A specular highlight catches the light, and fresnel brightens the edge where the glass turns away from you.</p>
+              </div>
+              <div id="light-toggles" class="flex gap-2" aria-label="Lighting layers">
+                <button type="button" data-light="specular" data-on="0.9" aria-pressed="true" class="chip">Specular</button>
+                <button type="button" data-light="fresnel" data-on="0.8" aria-pressed="true" class="chip">Fresnel</button>
+                <button type="button" data-light="rim" data-on="1" aria-pressed="true" class="chip">Rim</button>
+              </div>
+            </div>
+            <div data-surface class="surface aspect-[16/9] sm:aspect-[21/9]">
+              <img data-photo="3408744" alt="" class="absolute inset-0 size-full object-cover" draggable="false" />
+              <div class="absolute inset-0 grid place-items-center">
+                <div id="light-demo" data-demo='{"refraction":60,"frost":0,"chroma":0.3,"zoom":1.05,"bevel":48,"specular":0.9,"fresnel":0.8,"rim":1}' class="grid h-[38%] w-[min(72%,560px)] place-items-center rounded-full">
+                  <span class="text-[clamp(1rem,2.4vw,1.5rem)] font-semibold tracking-[-0.01em] text-white/90">Liquid Glass</span>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- Dome -->
+          <article data-reveal class="tile md:col-span-3">
+            <div class="p-7 sm:p-10">
+              <p class="eyebrow">Bevel</p>
+              <h3 class="tile-title mt-2">From a thin rim to a full&nbsp;dome.</h3>
+              <p class="tile-copy mt-3">Set how far the curve reaches in. Take it all the way to the middle and the lens becomes a magnifier.</p>
+            </div>
+            <div data-surface class="surface aspect-square">
+              <img data-photo="3225517" alt="" class="absolute inset-0 size-full object-cover" draggable="false" />
+              <div class="grid-lines absolute inset-0"></div>
+              <div class="absolute inset-0 grid place-items-center">
+                <div data-demo='{"preset":"dome","frost":0,"chroma":0.15,"refraction":45}' class="aspect-square w-[52%] rounded-full"></div>
+              </div>
+            </div>
+          </article>
+
+          <!-- Buttons -->
+          <article data-reveal class="tile md:col-span-3">
+            <div class="p-7 sm:p-10">
+              <p class="eyebrow">Button mode</p>
+              <h3 class="tile-title mt-2">Buttons that press&nbsp;back.</h3>
+              <p class="tile-copy mt-3">Hover and the glass brightens. Press and the bevel flattens as the shadow tightens. Springs, so it never snaps.</p>
+            </div>
+            <div data-surface class="surface aspect-square">
+              <img data-photo="268533" alt="" class="absolute inset-0 size-full object-cover" draggable="false" />
+              <div class="absolute inset-0 flex items-center justify-center gap-3">
+                <button id="play" type="button" data-demo='{"refraction":14,"frost":6,"chroma":0.1,"zoom":1,"bevel":22,"specular":0.6,"fresnel":0.5,"brightness":0.05,"tint":"rgb(255 255 255 / 0.06)"}' data-button class="flex h-14 items-center gap-2 rounded-full px-6 text-[15px] font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+                  <svg class="size-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" /></svg>
+                  <span>Play</span>
+                </button>
+                <button id="like" type="button" aria-label="Like" aria-pressed="false" data-demo='{"refraction":14,"frost":6,"chroma":0.1,"zoom":1,"bevel":22,"specular":0.6,"fresnel":0.5,"brightness":0.05,"tint":"rgb(255 255 255 / 0.06)"}' data-button class="grid size-14 place-items-center rounded-full text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+                  <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" /></svg>
+                </button>
+              </div>
+            </div>
+          </article>
+
+          <!-- Tone -->
+          <article data-reveal class="tile md:col-span-3">
+            <div class="p-7 sm:p-10">
+              <p class="eyebrow">Tone</p>
+              <h3 class="tile-title mt-2">Brightness and saturation, in the&nbsp;glass.</h3>
+              <p class="tile-copy mt-3">Grade what's behind the lens without touching the page. Push it to mono, or make it glow.</p>
+            </div>
+            <div data-surface class="surface aspect-square">
+              <img data-photo="2662116" alt="" class="absolute inset-0 size-full object-cover" draggable="false" />
+              <div class="absolute inset-0 flex flex-col items-center justify-center gap-4">
+                <div data-demo='{"refraction":12,"frost":0,"chroma":0,"zoom":1,"bevel":22,"saturation":-1,"brightness":0.04}' class="grid h-[26%] w-[70%] place-items-center rounded-[28px] text-sm font-semibold text-white/90">Mono</div>
+                <div data-demo='{"refraction":12,"frost":0,"chroma":0,"zoom":1,"bevel":22,"saturation":0.9,"brightness":0.08}' class="grid h-[26%] w-[70%] place-items-center rounded-[28px] text-sm font-semibold text-white/90">Vivid</div>
+              </div>
+            </div>
+          </article>
+
+          <!-- Presets -->
+          <article data-reveal class="tile flex flex-col md:col-span-3">
+            <div class="p-7 sm:p-10">
+              <p class="eyebrow">Presets</p>
+              <h3 class="tile-title mt-2">Five looks to start&nbsp;from.</h3>
+              <p class="tile-copy mt-3">Pick one, then tune it. Presets are plain settings on <code class="code">LiquidGlass.presets</code>, so your site can use them too.</p>
+            </div>
+            <div class="mt-auto px-7 pb-7 sm:px-10 sm:pb-10">
+              <div id="try-presets" role="radiogroup" aria-label="Preset" class="flex flex-wrap gap-2"></div>
+              <div class="mt-4 overflow-x-auto rounded-2xl bg-black/50 p-5 ring-1 ring-white/10 [scrollbar-width:none]">
+                <pre class="font-mono text-[12px] leading-relaxed"><code id="preset-code" class="hljs"></code></pre>
+              </div>
+              <button id="try-preset" type="button" class="mt-4 text-[15px] text-[#2997ff] hover:underline">Try it on the lens <span aria-hidden="true">↑</span></button>
+            </div>
+          </article>
+
+          <!-- Numbers -->
+          <div data-reveal class="tile p-7 text-center md:col-span-2">
+            <p class="stat">0</p>
+            <p class="tile-copy mt-1">dependencies</p>
+          </div>
+          <div data-reveal class="tile p-7 text-center md:col-span-2">
+            <p class="stat">1</p>
+            <p class="tile-copy mt-1">file to copy</p>
+          </div>
+          <div data-reveal class="tile p-7 text-center md:col-span-2">
+            <p class="stat">3</p>
+            <p class="tile-copy mt-1">browser engines</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- How it works -->
+    <section id="how" class="scroll-mt-12 px-4 py-24 sm:px-6 sm:py-32">
+      <div class="mx-auto max-w-5xl">
+        <header data-reveal class="mx-auto max-w-3xl text-center">
+          <h2 class="display">How it works.</h2>
+          <p class="lede mx-auto mt-6 max-w-2xl">Four stages, all standard web platform: <strong>a copy of the page, a map of how far each pixel moves, an SVG filter that moves them, and light painted on top.</strong></p>
+        </header>
+
+        <!-- The pipeline at a glance -->
+        <ol data-reveal class="mt-16 grid grid-cols-2 gap-3 sm:mt-20 sm:grid-cols-4">
+          <li><a href="#how-copy" class="step"><span class="step-n">1</span><span class="step-t">Copy</span><span class="step-d">Clone the page under the lens</span></a></li>
+          <li><a href="#how-map" class="step"><span class="step-n">2</span><span class="step-t">Map</span><span class="step-d">Where each pixel should move</span></a></li>
+          <li><a href="#how-filter" class="step"><span class="step-n">3</span><span class="step-t">Filter</span><span class="step-d">Move them, split the colours</span></a></li>
+          <li><a href="#how-light" class="step"><span class="step-n">4</span><span class="step-t">Light</span><span class="step-d">Rim, specular and fresnel</span></a></li>
+        </ol>
+
+        <!-- 1. Copy -->
+        <div id="how-copy" class="how-row scroll-mt-20">
+          <div data-reveal class="how-text">
+            <p class="eyebrow">Step 1 · Copy</p>
+            <h3 class="tile-title mt-2">A live copy, lined up underneath.</h3>
+            <p class="tile-copy mt-4">An SVG filter can't see what's behind an element. <code class="code">backdrop-filter: url()</code> could, but only Chrome supports it. So the lens keeps its own copy of the page, made with <code class="code">cloneNode(true)</code> and positioned so every pixel lines up with the original.</p>
+            <p class="tile-copy mt-4">A <code class="code">MutationObserver</code>, plus input and scroll listeners, marks the copy stale, and it's rebuilt on the next frame. Cloning drops live state, so input values, checkboxes, canvas pixels and scroll offsets are carried across by hand.</p>
+            <ul class="mt-6 flex flex-wrap gap-2">
+              <li class="tag">inert</li><li class="tag">aria-hidden</li><li class="tag">IDs removed</li><li class="tag">pointer-events: none</li>
+            </ul>
+          </div>
+          <figure data-reveal class="tile how-figure">
+            <svg viewBox="0 0 420 320" class="w-full" role="img" aria-labelledby="how-copy-cap">
+              <defs>
+                <linearGradient id="lens-fill" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.35" /><stop offset="1" stop-color="#fff" stop-opacity="0.06" /></linearGradient>
+              </defs>
+              <!-- page -->
+              <g transform="matrix(1 0.5 -1 0.5 210 150)">
+                <rect width="150" height="150" rx="10" fill="#2c2c2e" />
+                <rect x="18" y="20" width="90" height="12" rx="4" fill="#636366" /><rect x="18" y="42" width="114" height="6" rx="3" fill="#48484a" /><rect x="18" y="56" width="100" height="6" rx="3" fill="#48484a" /><rect x="18" y="80" width="44" height="16" rx="8" fill="#f5f5f7" />
+              </g>
+              <!-- copy -->
+              <g transform="matrix(1 0.5 -1 0.5 210 92)">
+                <rect width="150" height="150" rx="10" fill="none" stroke="#86868b" stroke-width="1.2" stroke-dasharray="5 5" />
+                <rect x="18" y="20" width="90" height="12" rx="4" fill="none" stroke="#636366" stroke-dasharray="3 3" /><rect x="18" y="80" width="44" height="16" rx="8" fill="none" stroke="#636366" stroke-dasharray="3 3" />
+              </g>
+              <!-- lens -->
+              <g transform="matrix(1 0.5 -1 0.5 210 34)">
+                <rect x="30" y="40" width="90" height="70" rx="22" fill="url(#lens-fill)" stroke="#fff" stroke-opacity="0.7" stroke-width="1.2" />
+              </g>
+              <g font-size="12" font-family="-apple-system, BlinkMacSystemFont, sans-serif" fill="#86868b">
+                <text x="372" y="230">Page</text><text x="372" y="172">Copy</text><text x="372" y="114" fill="#f5f5f7">Lens</text>
+              </g>
+            </svg>
+            <figcaption id="how-copy-cap" class="how-cap">The lens shows the copy, never the page itself. Both move together, so the copy always matches what's underneath.</figcaption>
+          </figure>
+        </div>
+
+        <!-- 2. Map -->
+        <div id="how-map" class="how-row scroll-mt-20">
+          <div data-reveal class="how-text sm:order-2">
+            <p class="eyebrow">Step 2 · Map</p>
+            <h3 class="tile-title mt-2">A displacement map from a distance field.</h3>
+            <p class="tile-copy mt-4">The lens is a signed distance field for a rounded rectangle: negative inside, zero on the edge. Across the bevel the glass is a quarter circle, so the bend grows as <span class="math">1 − √(1 − t²)</span>, where <span class="math">t</span> runs from 0 at the bevel's inner edge to 1 at the rim. The direction is the field's gradient, which points straight out.</p>
+            <p class="tile-copy mt-4">Each offset is written to a canvas, x in red and y in green, centred on 128. The curve stops just short of vertical, since a vertical edge would bend without limit.</p>
+            <svg viewBox="0 0 320 120" class="mt-6 w-full max-w-sm" role="img" aria-label="Bend across the bevel: flat in the middle, rising steeply toward the rim">
+              <path d="M20 100 H300" stroke="#48484a" stroke-width="1" />
+              <path d="M20.0,100.0 L22.8,100.0 L25.6,100.0 L28.4,99.9 L31.2,99.9 L34.0,99.8 L36.8,99.8 L39.6,99.7 L42.4,99.6 L45.2,99.5 L48.0,99.4 L50.8,99.3 L53.6,99.1 L56.4,99.0 L59.2,98.8 L62.0,98.6 L64.8,98.4 L67.6,98.2 L70.4,98.0 L73.2,97.8 L76.0,97.6 L78.8,97.3 L81.6,97.0 L84.4,96.8 L87.2,96.5 L90.0,96.2 L92.8,95.9 L95.6,95.5 L98.4,95.2 L101.2,94.8 L104.0,94.5 L106.8,94.1 L109.6,93.7 L112.4,93.3 L115.2,92.8 L118.0,92.4 L120.8,91.9 L123.6,91.5 L126.4,91.0 L129.2,90.5 L132.0,90.0 L134.8,89.4 L137.6,88.9 L140.4,88.3 L143.2,87.8 L146.0,87.2 L148.8,86.6 L151.6,85.9 L154.4,85.3 L157.2,84.6 L160.0,84.0 L162.8,83.3 L165.6,82.6 L168.4,81.8 L171.2,81.1 L174.0,80.3 L176.8,79.5 L179.6,78.7 L182.4,77.9 L185.2,77.1 L188.0,76.2 L190.8,75.3 L193.6,74.4 L196.4,73.5 L199.2,72.5 L202.0,71.5 L204.8,70.5 L207.6,69.5 L210.4,68.4 L213.2,67.4 L216.0,66.3 L218.8,65.1 L221.6,64.0 L224.4,62.8 L227.2,61.5 L230.0,60.3 L232.8,59.0 L235.6,57.7 L238.4,56.3 L241.2,54.9 L244.0,53.4 L246.8,52.0 L249.6,50.4 L252.4,48.8 L255.2,47.2 L258.0,45.5 L260.8,43.8 L263.6,42.0 L266.4,40.2 L269.2,38.2 L272.0,36.2 L274.8,34.2 L277.6,32.0 L280.4,29.7 L283.2,27.4 L286.0,24.9 L288.8,22.3 L291.6,19.5 L294.4,16.5 L297.2,13.4 L300.0,10.0" fill="none" stroke="#2997ff" stroke-width="2.5" stroke-linecap="round" />
+              <g font-size="11" font-family="-apple-system, BlinkMacSystemFont, sans-serif" fill="#86868b"><text x="20" y="116">bevel starts</text><text x="300" y="116" text-anchor="end">rim</text><text x="300" y="20" text-anchor="end" fill="#f5f5f7">full refraction</text></g>
+            </svg>
+          </div>
+          <figure data-reveal class="tile how-figure sm:order-1">
+            <canvas id="how-map-canvas" class="mx-auto block h-auto max-h-80 w-full max-w-md rounded-2xl" aria-label="The displacement map of the lens at the top of the page"></canvas>
+            <figcaption class="how-cap">The real map behind the lens up top. Hue is the direction each pixel moves, brightness how far. Tune the lens and it redraws.</figcaption>
+          </figure>
+        </div>
+
+        <!-- 3. Filter -->
+        <div id="how-filter" class="how-row scroll-mt-20">
+          <div data-reveal class="how-text">
+            <p class="eyebrow">Step 3 · Filter</p>
+            <h3 class="tile-title mt-2">Three passes for dispersion.</h3>
+            <p class="tile-copy mt-4">Real glass bends each wavelength a little differently. The filter runs the displacement three times at slightly different strengths, keeps red from the strongest, green from the middle and blue from the weakest, then adds them back together.</p>
+            <p class="tile-copy mt-4">Brightness and saturation are one colour matrix at the end. Frost is a CSS <code class="code">blur()</code> around the filter rather than <code class="code">feGaussianBlur</code> inside it, which keeps it on the GPU in Firefox.</p>
+          </div>
+          <figure data-reveal class="tile how-figure">
+            <ol class="flow" aria-label="Filter chain">
+              <li><span class="node">Copy of the page <em>SourceGraphic</em></span></li>
+              <li class="flow-3">
+                <span class="node"><i class="dot bg-[#ff453a]"></i>feDisplacementMap <em>× (1 + c)</em></span>
+                <span class="node"><i class="dot bg-[#30d158]"></i>feDisplacementMap <em>× 1</em></span>
+                <span class="node"><i class="dot bg-[#0a84ff]"></i>feDisplacementMap <em>× (1 − c)</em></span>
+              </li>
+              <li class="flow-3">
+                <span class="node">feColorMatrix <em>keep R</em></span>
+                <span class="node">feColorMatrix <em>keep G</em></span>
+                <span class="node">feColorMatrix <em>keep B</em></span>
+              </li>
+              <li><span class="node">feComposite <em>arithmetic: R + G + B</em></span></li>
+              <li><span class="node">feColorMatrix <em>saturation, brightness</em></span></li>
+              <li><span class="node node-css">CSS <em>blur(frost) · scale(zoom)</em></span></li>
+            </ol>
+            <figcaption class="how-cap">With dispersion at zero it's a single pass. <span class="math">c</span> is the dispersion setting.</figcaption>
+          </figure>
+        </div>
+
+        <!-- 4. Light -->
+        <div id="how-light" class="how-row scroll-mt-20">
+          <div data-reveal class="how-text sm:order-2">
+            <p class="eyebrow">Step 4 · Light</p>
+            <h3 class="tile-title mt-2">Light, painted once.</h3>
+            <p class="tile-copy mt-4">Lighting is a canvas over the glass. Each rim pixel gets a 3D normal that tilts outward as the bevel rounds over. A Blinn-Phong half vector between a top-left light and your eye gives the specular spot, and fresnel brightens the edge where the surface turns away.</p>
+            <p class="tile-copy mt-4">It's drawn at device resolution when the shape changes, never per frame. Moving the lens is only a transform.</p>
+            <dl class="mt-6 grid grid-cols-2 gap-3">
+              <div class="formula"><dt>Specular</dt><dd>(n · h)<sup>48</sup></dd></div>
+              <div class="formula"><dt>Fresnel</dt><dd>(1 − n<sub>z</sub>)<sup>3</sup></dd></div>
+            </dl>
+          </div>
+          <figure data-reveal class="tile how-figure sm:order-1">
+            <canvas id="how-rim-canvas" class="mx-auto block h-auto max-h-80 w-full max-w-md rounded-2xl" aria-label="The lighting layer of the lens at the top of the page"></canvas>
+            <figcaption class="how-cap">The lens's lighting layer on its own: hairline, rim light, specular spot and fresnel edge.</figcaption>
+          </figure>
+        </div>
+
+        <!-- Details -->
+        <div class="mt-24 grid gap-4 sm:mt-32 sm:grid-cols-2 lg:grid-cols-3">
+          <article data-reveal class="tile detail">
+            <svg viewBox="0 0 24 24" class="detail-icon" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+            <h4 class="detail-t">Only work when something changes</h4>
+            <p class="detail-d">The frame loop checks three flags: the copy is stale, the shape changed, or the lens moved. On an idle frame it does nothing.</p>
+          </article>
+          <article data-reveal class="tile detail">
+            <svg viewBox="0 0 24 24" class="detail-icon" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12c2-6 4-6 6 0s4 6 6 0 4-6 6 0" /></svg>
+            <h4 class="detail-t">Springs, not tweens</h4>
+            <p class="detail-d">Position is a damped spring, so new input just retargets it mid-flight. Speed stretches the lens along its path, and reduced motion snaps instead.</p>
+          </article>
+          <article data-reveal class="tile detail">
+            <svg viewBox="0 0 24 24" class="detail-icon" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4M11 8v6M8 11h6" /></svg>
+            <h4 class="detail-t">Zoom without steps</h4>
+            <p class="detail-d">Map channels are 8-bit, so zoom stored there moved in half-pixel steps. Instead the filtered layer is built at 1/zoom size and scaled up.</p>
+          </article>
+          <article data-reveal class="tile detail">
+            <svg viewBox="0 0 24 24" class="detail-icon" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h6v6H4zM14 14h6v6h-6zM14 4h6v6h-6zM4 14h6v6H4z" /></svg>
+            <h4 class="detail-t">Whole pixels</h4>
+            <p class="detail-d">Browsers rasterise filters on the CSS pixel grid. At a fractional position the refraction gets resampled and shimmers, so the lens snaps to whole pixels.</p>
+          </article>
+          <article data-reveal class="tile detail">
+            <svg viewBox="0 0 24 24" class="detail-icon" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 3a9 9 0 0 0 0 18M3 12h18" /></svg>
+            <h4 class="detail-t">Safari, handled</h4>
+            <p class="detail-d">Safari drops a filter over GPU layers and mis-scales transformed content inside one. The copy loses <code class="code">will-change</code> and animations, and moves with left and top.</p>
+          </article>
+          <article data-reveal class="tile detail">
+            <svg viewBox="0 0 24 24" class="detail-icon" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></svg>
+            <h4 class="detail-t">Invisible to assistive tech</h4>
+            <p class="detail-d">Screen readers, keyboard focus and find-in-page only ever meet the real page. The copy is inert and hidden, and its IDs are stripped so they stay unique.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Comparison. Facts from each project's README and source, checked October 2026. -->
+    <section id="compare" class="scroll-mt-12 px-4 py-24 sm:px-6 sm:py-32">
+      <div class="mx-auto max-w-6xl">
+        <header data-reveal class="mx-auto max-w-3xl text-center">
+          <h2 class="display">How it compares.</h2>
+          <p class="lede mx-auto mt-6 max-w-2xl">Liquid glass on the web, side by side. <strong>Each takes a different path to the same look</strong>, and each path has its trade-offs.</p>
+        </header>
+        <div data-reveal class="tile mt-14 overflow-x-auto [scrollbar-color:rgb(255_255_255/0.2)_transparent] [scrollbar-width:thin]">
+          <table class="w-full min-w-[920px] border-collapse text-left">
+            <caption class="sr-only">Feature comparison of liquid glass libraries for the web</caption>
+            <thead>
+              <tr class="border-b border-white/10">
+                <th scope="col" class="sticky left-0 z-10 w-44 bg-[#161617] px-5 py-5"><span class="sr-only">Feature</span></th>
+                <th scope="col" class="px-4 py-5 align-bottom bg-white/[0.04]">
+                  <a href="https://github.com/dazecoop/liquid-glass" target="_blank" rel="noopener noreferrer" class="group block">
+                    <span class="block text-[11px] font-medium text-[#86868b]">This project</span>
+                    <span class="mt-0.5 block text-[15px] font-semibold tracking-[-0.01em] text-[#f5f5f7] group-hover:underline">Liquid Glass</span>
+                  </a>
+                </th>
+                <th scope="col" class="px-4 py-5 align-bottom">
+                  <a href="https://github.com/samasante/liquid-glass" target="_blank" rel="noopener noreferrer" class="group block">
+                    <span class="block text-[11px] font-medium text-[#86868b]">samasante</span>
+                    <span class="mt-0.5 block text-[15px] font-semibold tracking-[-0.01em] text-[#f5f5f7] group-hover:underline">liquid-glass</span>
+                  </a>
+                </th>
+                <th scope="col" class="px-4 py-5 align-bottom">
+                  <a href="https://github.com/rdev/liquid-glass-react" target="_blank" rel="noopener noreferrer" class="group block">
+                    <span class="block text-[11px] font-medium text-[#86868b]">rdev</span>
+                    <span class="mt-0.5 block text-[15px] font-semibold tracking-[-0.01em] text-[#f5f5f7] group-hover:underline">liquid-glass-react</span>
+                  </a>
+                </th>
+                <th scope="col" class="px-4 py-5 align-bottom">
+                  <a href="https://github.com/ybouane/liquidglass" target="_blank" rel="noopener noreferrer" class="group block">
+                    <span class="block text-[11px] font-medium text-[#86868b]">ybouane</span>
+                    <span class="mt-0.5 block text-[15px] font-semibold tracking-[-0.01em] text-[#f5f5f7] group-hover:underline">liquidglass</span>
+                  </a>
+                </th>
+                <th scope="col" class="px-4 py-5 align-bottom">
+                  <a href="https://github.com/naughtyduk/liquidGL" target="_blank" rel="noopener noreferrer" class="group block">
+                    <span class="block text-[11px] font-medium text-[#86868b]">naughtyduk</span>
+                    <span class="mt-0.5 block text-[15px] font-semibold tracking-[-0.01em] text-[#f5f5f7] group-hover:underline">liquidGL</span>
+                  </a>
+                </th>
+                <th scope="col" class="px-4 py-5 align-bottom">
+                  <a href="https://github.com/shuding/liquid-glass" target="_blank" rel="noopener noreferrer" class="group block">
+                    <span class="block text-[11px] font-medium text-[#86868b]">shuding</span>
+                    <span class="mt-0.5 block text-[15px] font-semibold tracking-[-0.01em] text-[#f5f5f7] group-hover:underline">liquid-glass</span>
+                  </a>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="border-b border-white/10 last:border-0">
+                <th scope="row" class="sticky left-0 z-10 bg-[#161617] px-5 py-4 align-top text-[13px] font-semibold text-[#f5f5f7]">How it works</th>
+                <td class="px-4 py-4 align-top text-[13px] leading-snug text-[#d2d2d7] bg-white/[0.04]">SVG displacement on a live copy of the page</td>
+                <td class="px-4 py-4 align-top text-[13px] leading-snug text-[#d2d2d7]">SVG displacement on the live page, or a copy</td>
+                <td class="px-4 py-4 align-top text-[13px] leading-snug text-[#d2d2d7]">SVG displacement on a blurred backdrop</td>
+                <td class="px-4 py-4 align-top text-[13px] leading-snug text-[#d2d2d7]">WebGL shader on a captured image of the page</td>
+                <td class="px-4 py-4 align-top text-[13px] leading-snug text-[#d2d2d7]">WebGL / WebGPU shader on a page snapshot</td>
+                <td class="px-4 py-4 align-top text-[13px] leading-snug text-[#d2d2d7]">SVG filter through backdrop-filter</td>
+              </tr>
+              <tr class="border-b border-white/10 last:border-0">
+                <th scope="row" class="sticky left-0 z-10 bg-[#161617] px-5 py-4 align-top text-[13px] font-semibold text-[#f5f5f7]">Bends in Safari and Firefox</th>
+                <td class="px-4 py-4 align-top bg-white/[0.04]"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#ffd60a]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="6.5" /><path d="M12 5.5a6.5 6.5 0 0 1 0 13z" fill="currentColor" stroke="none" /></svg><span class="sr-only">Partly.</span><span class="text-[13px] leading-snug text-[#86868b]">In copy modes; the default wrapper bends in Chrome only</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#6e6e73]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M7 12h10" /></svg><span class="sr-only">No.</span><span class="text-[13px] leading-snug text-[#86868b]">Blur only outside Chrome</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span><span class="text-[13px] leading-snug text-[#86868b]">Large lenses can be unstable in Safari</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#6e6e73]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M7 12h10" /></svg><span class="sr-only">No.</span><span class="text-[13px] leading-snug text-[#86868b]">Chrome only</span></div></td>
+              </tr>
+              <tr class="border-b border-white/10 last:border-0">
+                <th scope="row" class="sticky left-0 z-10 bg-[#161617] px-5 py-4 align-top text-[13px] font-semibold text-[#f5f5f7]">Refracts live HTML</th>
+                <td class="px-4 py-4 align-top bg-white/[0.04]"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span><span class="text-[13px] leading-snug text-[#86868b]">Text stays selectable, buttons clickable</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#ffd60a]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="6.5" /><path d="M12 5.5a6.5 6.5 0 0 1 0 13z" fill="currentColor" stroke="none" /></svg><span class="sr-only">Partly.</span><span class="text-[13px] leading-snug text-[#86868b]">In Chrome</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#6e6e73]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M7 12h10" /></svg><span class="sr-only">No.</span><span class="text-[13px] leading-snug text-[#86868b]">Re-captured when content changes</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#6e6e73]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M7 12h10" /></svg><span class="sr-only">No.</span><span class="text-[13px] leading-snug text-[#86868b]">Snapshot</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#ffd60a]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="6.5" /><path d="M12 5.5a6.5 6.5 0 0 1 0 13z" fill="currentColor" stroke="none" /></svg><span class="sr-only">Partly.</span><span class="text-[13px] leading-snug text-[#86868b]">In Chrome</span></div></td>
+              </tr>
+              <tr class="border-b border-white/10 last:border-0">
+                <th scope="row" class="sticky left-0 z-10 bg-[#161617] px-5 py-4 align-top text-[13px] font-semibold text-[#f5f5f7]">Video and canvas behind the glass</th>
+                <td class="px-4 py-4 align-top bg-white/[0.04]"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#6e6e73]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M7 12h10" /></svg><span class="sr-only">No.</span><span class="text-[13px] leading-snug text-[#86868b]">Not copied</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span><span class="text-[13px] leading-snug text-[#86868b]">Through a WebGL path</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#ffd60a]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="6.5" /><path d="M12 5.5a6.5 6.5 0 0 1 0 13z" fill="currentColor" stroke="none" /></svg><span class="sr-only">Partly.</span><span class="text-[13px] leading-snug text-[#86868b]">In Chrome</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span><span class="text-[13px] leading-snug text-[#86868b]">Re-captured every frame</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span><span class="text-[13px] leading-snug text-[#86868b]">Re-captured</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#ffd60a]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="6.5" /><path d="M12 5.5a6.5 6.5 0 0 1 0 13z" fill="currentColor" stroke="none" /></svg><span class="sr-only">Partly.</span><span class="text-[13px] leading-snug text-[#86868b]">In Chrome</span></div></td>
+              </tr>
+              <tr class="border-b border-white/10 last:border-0">
+                <th scope="row" class="sticky left-0 z-10 bg-[#161617] px-5 py-4 align-top text-[13px] font-semibold text-[#f5f5f7]">Chromatic dispersion</th>
+                <td class="px-4 py-4 align-top bg-white/[0.04]"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#6e6e73]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M7 12h10" /></svg><span class="sr-only">No.</span></div></td>
+              </tr>
+              <tr class="border-b border-white/10 last:border-0">
+                <th scope="row" class="sticky left-0 z-10 bg-[#161617] px-5 py-4 align-top text-[13px] font-semibold text-[#f5f5f7]">Frost</th>
+                <td class="px-4 py-4 align-top bg-white/[0.04]"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#ffd60a]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="6.5" /><path d="M12 5.5a6.5 6.5 0 0 1 0 13z" fill="currentColor" stroke="none" /></svg><span class="sr-only">Partly.</span><span class="text-[13px] leading-snug text-[#86868b]">Fixed, very light</span></div></td>
+              </tr>
+              <tr class="border-b border-white/10 last:border-0">
+                <th scope="row" class="sticky left-0 z-10 bg-[#161617] px-5 py-4 align-top text-[13px] font-semibold text-[#f5f5f7]">Lighting</th>
+                <td class="px-4 py-4 align-top bg-white/[0.04]"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span><span class="text-[13px] leading-snug text-[#86868b]">Rim, specular and fresnel</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span><span class="text-[13px] leading-snug text-[#86868b]">Sheen, glow and specular</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#ffd60a]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="6.5" /><path d="M12 5.5a6.5 6.5 0 0 1 0 13z" fill="currentColor" stroke="none" /></svg><span class="sr-only">Partly.</span><span class="text-[13px] leading-snug text-[#86868b]">Edge highlights</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span><span class="text-[13px] leading-snug text-[#86868b]">Rim, specular and fresnel</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span><span class="text-[13px] leading-snug text-[#86868b]">Animated specular</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#6e6e73]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M7 12h10" /></svg><span class="sr-only">No.</span></div></td>
+              </tr>
+              <tr class="border-b border-white/10 last:border-0">
+                <th scope="row" class="sticky left-0 z-10 bg-[#161617] px-5 py-4 align-top text-[13px] font-semibold text-[#f5f5f7]">Presets</th>
+                <td class="px-4 py-4 align-top bg-white/[0.04]"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span><span class="text-[13px] leading-snug text-[#86868b]">Five</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#6e6e73]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M7 12h10" /></svg><span class="sr-only">No.</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#ffd60a]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="6.5" /><path d="M12 5.5a6.5 6.5 0 0 1 0 13z" fill="currentColor" stroke="none" /></svg><span class="sr-only">Partly.</span><span class="text-[13px] leading-snug text-[#86868b]">Four refraction modes</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#ffd60a]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="6.5" /><path d="M12 5.5a6.5 6.5 0 0 1 0 13z" fill="currentColor" stroke="none" /></svg><span class="sr-only">Partly.</span><span class="text-[13px] leading-snug text-[#86868b]">Example looks in the demo</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span><span class="text-[13px] leading-snug text-[#86868b]">Five</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#6e6e73]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M7 12h10" /></svg><span class="sr-only">No.</span></div></td>
+              </tr>
+              <tr class="border-b border-white/10 last:border-0">
+                <th scope="row" class="sticky left-0 z-10 bg-[#161617] px-5 py-4 align-top text-[13px] font-semibold text-[#f5f5f7]">Motion</th>
+                <td class="px-4 py-4 align-top bg-white/[0.04]"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span><span class="text-[13px] leading-snug text-[#86868b]">Spring follow, squash and stretch, button press</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span><span class="text-[13px] leading-snug text-[#86868b]">Pointer follow, squash and stretch</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span><span class="text-[13px] leading-snug text-[#86868b]">Elastic stretch toward the cursor</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#ffd60a]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="6.5" /><path d="M12 5.5a6.5 6.5 0 0 1 0 13z" fill="currentColor" stroke="none" /></svg><span class="sr-only">Partly.</span><span class="text-[13px] leading-snug text-[#86868b]">Draggable panels</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#ffd60a]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="6.5" /><path d="M12 5.5a6.5 6.5 0 0 1 0 13z" fill="currentColor" stroke="none" /></svg><span class="sr-only">Partly.</span><span class="text-[13px] leading-snug text-[#86868b]">Draggable, tilt</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#ffd60a]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="6.5" /><path d="M12 5.5a6.5 6.5 0 0 1 0 13z" fill="currentColor" stroke="none" /></svg><span class="sr-only">Partly.</span><span class="text-[13px] leading-snug text-[#86868b]">Draggable</span></div></td>
+              </tr>
+              <tr class="border-b border-white/10 last:border-0">
+                <th scope="row" class="sticky left-0 z-10 bg-[#161617] px-5 py-4 align-top text-[13px] font-semibold text-[#f5f5f7]">Framework</th>
+                <td class="px-4 py-4 align-top bg-white/[0.04]"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span><span class="text-[13px] leading-snug text-[#86868b]">None</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#ffd60a]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="6.5" /><path d="M12 5.5a6.5 6.5 0 0 1 0 13z" fill="currentColor" stroke="none" /></svg><span class="sr-only">Partly.</span><span class="text-[13px] leading-snug text-[#86868b]">React</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#ffd60a]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="6.5" /><path d="M12 5.5a6.5 6.5 0 0 1 0 13z" fill="currentColor" stroke="none" /></svg><span class="sr-only">Partly.</span><span class="text-[13px] leading-snug text-[#86868b]">React</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span><span class="text-[13px] leading-snug text-[#86868b]">None</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span><span class="text-[13px] leading-snug text-[#86868b]">None</span></div></td>
+                <td class="px-4 py-4 align-top"><div class="flex items-start gap-2"><svg class="size-4 shrink-0 text-[#30d158]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg><span class="sr-only">Yes.</span><span class="text-[13px] leading-snug text-[#86868b]">None</span></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p data-reveal class="mx-auto mt-6 max-w-3xl text-center text-xs leading-relaxed text-[#86868b]">From each project's README and source in October 2026. Libraries change, so check the links for the latest. Our copy doesn't show hover or focus states, video or WebGL canvases.</p>
+      </div>
+    </section>
+
+    <!-- Get started -->
+    <section id="start" class="scroll-mt-12 px-4 py-24 sm:px-6 sm:py-32">
+      <div class="mx-auto max-w-3xl">
+        <header data-reveal class="text-center">
+          <h2 class="display">Drop it in.</h2>
+          <p class="lede mx-auto mt-6 max-w-xl">Tune the lens, open the developer panel and copy a snippet with your settings baked in. <strong>Or import one file.</strong></p>
+          <div class="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
+            <button id="start-dev" type="button" class="rounded-full bg-[#0071e3] px-5 py-2.5 text-[15px] font-medium text-white transition hover:bg-[#0077ed] active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2997ff]">Open the developer panel</button>
+            <a href="https://github.com/dazecoop/liquid-glass" target="_blank" rel="noopener noreferrer" class="text-[15px] text-[#2997ff] hover:underline">View on GitHub <span aria-hidden="true">›</span></a>
+          </div>
+        </header>
+        <div data-reveal class="tile mt-12 overflow-x-auto p-6 sm:p-8 [scrollbar-width:thin]">
+          <pre class="font-mono text-[13px] leading-relaxed"><code id="start-code" class="hljs"></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <footer class="px-4 pb-12 sm:px-6">
+      <div class="mx-auto max-w-5xl border-t border-white/10 pt-6 text-xs leading-relaxed text-[#86868b]">
+        <p>Inspired by <a href="https://codepen.io/shingidad/pen/jEPxMgW" target="_blank" rel="noopener noreferrer" class="text-[#d2d2d7] hover:underline">this CodePen by shingidad</a>. Lighting, tone, presets and button mode adapted from <a href="https://github.com/ybouane/liquidglass" target="_blank" rel="noopener noreferrer" class="text-[#d2d2d7] hover:underline">ybouane/liquidglass</a>. Photos from <a href="https://www.pexels.com" target="_blank" rel="noopener noreferrer" class="text-[#d2d2d7] hover:underline">Pexels</a>.</p>
+      </div>
+    </footer>
     </main>
 
     <!-- Frame rate, outside the scene so its updates don't make the glass re-copy the page -->
-    <div aria-hidden="true" class="glass pointer-events-none fixed top-[max(1rem,env(safe-area-inset-top))] left-4 z-2147483001 flex items-center gap-2.5 rounded-xl py-1.5 pr-1.5 pl-3 text-xs text-white/90 sm:top-6 sm:left-6">
+    <div aria-hidden="true" class="glass pointer-events-none absolute top-[max(1rem,env(safe-area-inset-top))] left-4 z-2147483001 flex items-center gap-2.5 rounded-xl py-1.5 pr-1.5 pl-3 text-xs text-white/90 sm:top-6 sm:left-6">
       <span class="tabular-nums"><span id="fps-value" class="inline-block w-[3ch] text-right font-semibold">–</span> fps</span>
       <canvas id="fps-graph" class="h-6 w-24 rounded-md bg-black/25"></canvas>
     </div>

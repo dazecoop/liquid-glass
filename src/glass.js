@@ -11,13 +11,24 @@
 // - It drops an SVG filter entirely when the filtered content has GPU-composited layers, so
 //   the copy loses backdrop-filter, will-change and animations.
 // - It scales transformed content inside an SVG filter wrongly on retina screens, so the
-//   copy is moved with left/top and magnification is baked into the displacement map.
+//   copy is moved with left/top, and magnification scales the filtered layer from outside.
 //
 // Frost is a CSS blur() around the SVG filter rather than feGaussianBlur inside it, which
 // keeps it on the GPU in Firefox.
+//
+// Lighting treats the rim as the edge of a curved surface: its 3D normal tilts outward as
+// the bevel rounds over, which gives a Blinn-Phong specular spot and a fresnel edge glow.
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const LIGHT = [-0.55, -0.83]; // top-left, y down
+const LIGHT_HEIGHT = 0.5; // sine of the light's elevation above the glass
+const LUMA = [0.2126, 0.7152, 0.0722];
+// The rim profile is a circular arc, cut off just short of vertical: a truly vertical edge
+// bends without limit, so moving the lens a pixel would make the rim's refraction jump
+const ARC = 0.94;
+const ARC_DROP = 1 - Math.sqrt(1 - ARC * ARC);
+// Critically damped, about 0.3s to settle: hover and press on button glass
+const UI_SPRING = { stiffness: 440, damping: 42 };
 const CLONE_CSS = `
   [data-glass-copy], [data-glass-copy] * {
     backdrop-filter: none !important;
@@ -76,19 +87,25 @@ function follow(root, path) {
 const insideGlass = (node) => (node.nodeType === 1 ? node : node.parentElement)?.closest("[data-glass]");
 
 export class LiquidGlass {
-  constructor(source, { anchor = null, ...params } = {}) {
+  // Starting looks. Each is plain parameters: glass.set(LiquidGlass.presets.frosted).
+  // Dome rounds the bevel all the way to the middle, so it reads best on a circle.
+  static presets = {
+    clear: { refraction: 40, frost: 2, chroma: 0.4, zoom: 1.08, bevel: 35, specular: 0.35, fresnel: 0.3, brightness: 0, saturation: 0, tint: "", rim: 1 },
+    frosted: { refraction: 24, frost: 14, chroma: 0.15, zoom: 1, bevel: 30, specular: 0.5, fresnel: 0.5, brightness: 0.08, saturation: 0.3, tint: "rgb(255 255 255 / 0.08)", rim: 1 },
+    dark: { refraction: 32, frost: 6, chroma: 0.2, zoom: 1.04, bevel: 35, specular: 0.3, fresnel: 0.2, brightness: -0.18, saturation: -0.2, tint: "rgb(0 0 0 / 0.25)", rim: 0.6 },
+    prism: { refraction: 80, frost: 0, chroma: 1, zoom: 1.12, bevel: 50, specular: 0.25, fresnel: 0.4, brightness: 0.02, saturation: 0.5, tint: "", rim: 0.8 },
+    dome: { refraction: 50, frost: 0, chroma: 0.2, zoom: 1.35, bevel: 160, specular: 0.7, fresnel: 0.6, brightness: 0, saturation: 0.1, tint: "", rim: 1 },
+  };
+
+  constructor(source, { anchor = null, button = false, ...params } = {}) {
     this.source = source;
     this.anchor = anchor;
+    this.button = Boolean(button && anchor);
     this.params = {
       width: 280,
       height: 180,
       radius: 64,
-      refraction: 40,
-      frost: 2,
-      chroma: 0.4,
-      zoom: 1.08,
-      tint: "",
-      rim: 1,
+      ...LiquidGlass.presets.clear,
       ...params,
     };
 
@@ -99,6 +116,8 @@ export class LiquidGlass {
     this.stretchX = new Spring(1, { stiffness: 180, damping: 14 });
     this.stretchY = new Spring(1, { stiffness: 180, damping: 14 });
     this.springs = [this.x, this.y, this.scale, this.stretchX, this.stretchY];
+    this.hovered = new Spring(0, UI_SPRING);
+    this.pressed = new Spring(0, UI_SPRING);
     this.scrolled = new Set();
 
     this.#build();
@@ -161,6 +180,25 @@ export class LiquidGlass {
           radius: parseFloat(getComputedStyle(this.anchor).borderTopLeftRadius) || 0,
         });
       }).observe(this.anchor);
+    }
+
+    if (this.button) {
+      // Hover brightens, press flattens the bevel and tightens the shadow
+      const a = this.anchor;
+      const release = () => (this.pressed.target = 0);
+      a.addEventListener("pointerenter", () => (this.hovered.target = 1));
+      a.addEventListener("pointerleave", () => {
+        this.hovered.target = 0;
+        release();
+      });
+      a.addEventListener("pointerdown", () => (this.pressed.target = 1));
+      a.addEventListener("pointerup", release);
+      a.addEventListener("pointercancel", release);
+      a.addEventListener("keydown", (e) => {
+        if (e.key === " " || e.key === "Enter") this.pressed.target = 1;
+      });
+      a.addEventListener("keyup", release);
+      a.addEventListener("blur", release);
     }
   }
 
@@ -232,12 +270,13 @@ export class LiquidGlass {
   }
 
   #buildShape() {
-    const { width, height, radius, refraction, frost, chroma, zoom, tint, rim: rimStrength } = this.params;
+    const { width, height, radius, bevel: depth, refraction, frost, chroma, zoom, specular, fresnel, tint, rim: rimStrength } =
+      this.params;
     const dpr = Math.min(devicePixelRatio || 1, 2);
     const hw = width / 2;
     const hh = height / 2;
     const r = Math.min(radius, hw, hh);
-    const bevel = Math.min(Math.max(r * 0.55, 20), hw, hh);
+    const bevel = Math.max(Math.min(depth, hw, hh), 1);
     const sdf = (x, y) => sdRoundBox(x, y, hw, hh, r);
     const normal = (px, py, step) => {
       const nx = sdf(px + step, py) - sdf(px - step, py);
@@ -246,32 +285,45 @@ export class LiquidGlass {
       return [nx / len, ny / len];
     };
 
-    // The blur reaches past the lens edge, so the filtered area overhangs it by `pad`
-    const pad = Math.ceil(frost * 1.5);
-    this.pad = pad;
+    // Zoom isn't in the displacement map: the filtered layer is built 1/zoom the size and
+    // scaled up. Baked into the map, zoom was stored in 8-bit steps of about half a pixel, and
+    // moving the lens swept those steps across the content, so it jumped. The map now only
+    // holds the rim, and the middle doesn't move at all. Below, m* sizes are in that layer.
+    const z = zoom;
+    const mhw = hw / z;
+    const mhh = hh / z;
+    const mbevel = bevel / z;
+    const mrefraction = refraction / z;
+    const msdf = (x, y) => sdRoundBox(x, y, mhw, mhh, r / z);
+    const mres = dpr * Math.max(z, 1);
 
-    // Displacement map: the same zoom and circular-bevel profile as the original shader,
-    // encoded around 0.5. Only the rim needs normals; the middle is just the zoom.
-    const pull = 1 - 1 / zoom;
-    const scale = ((Math.max(hw, hh) + pad) * Math.abs(pull) + refraction) * 2 + 1;
+    // The blur reaches past the lens edge, so the filtered area overhangs it by `pad`
+    const pad = Math.ceil((frost * 1.5) / z);
+    this.inner = { x: mhw + pad, y: mhh + pad };
+
+    // Displacement map: a circular-bevel rim, encoded around 0.5. It's drawn at device
+    // resolution, since the rim bends steeply and a coarser map shows steps.
+    const scale = mrefraction * 2 + 1;
     const map = document.createElement("canvas");
-    map.width = Math.ceil(width + pad * 2);
-    map.height = Math.ceil(height + pad * 2);
+    map.width = Math.ceil((mhw + pad) * 2 * mres);
+    map.height = Math.ceil((mhh + pad) * 2 * mres);
     const mctx = map.getContext("2d");
     const md = mctx.createImageData(map.width, map.height);
     for (let y = 0; y < map.height; y++) {
       for (let x = 0; x < map.width; x++) {
-        const px = x + 0.5 - hw - pad;
-        const py = y + 0.5 - hh - pad;
-        let ox = px * pull;
-        let oy = py * pull;
-        const d = sdf(px, py);
-        if (d < 0 && d > -bevel && refraction > 0) {
-          const rim = 1 + d / bevel;
-          const bend = (1 - Math.sqrt(1 - rim * rim)) * refraction;
-          const [nx, ny] = normal(px, py, 1);
-          ox += nx * bend;
-          oy += ny * bend;
+        const px = (x + 0.5) / mres - mhw - pad;
+        const py = (y + 0.5) / mres - mhh - pad;
+        let ox = 0;
+        let oy = 0;
+        const d = msdf(px, py);
+        if (d < 0 && d > -mbevel && refraction > 0) {
+          const rim = (1 + d / mbevel) * ARC;
+          const bend = ((1 - Math.sqrt(1 - rim * rim)) / ARC_DROP) * mrefraction;
+          const nx = msdf(px + 0.5 / mres, py) - msdf(px - 0.5 / mres, py);
+          const ny = msdf(px, py + 0.5 / mres) - msdf(px, py - 0.5 / mres);
+          const len = Math.hypot(nx, ny) || 1;
+          ox = (nx / len) * bend;
+          oy = (ny / len) * bend;
         }
         const i = (y * map.width + x) * 4;
         md.data[i] = (0.5 - ox / scale) * 255;
@@ -288,6 +340,11 @@ export class LiquidGlass {
     const rd = rctx.createImageData(rim.width, rim.height);
     const lx = LIGHT[0] / Math.hypot(...LIGHT);
     const ly = LIGHT[1] / Math.hypot(...LIGHT);
+    // Blinn-Phong half vector between the light and a viewer looking straight down
+    const flat = Math.sqrt(1 - LIGHT_HEIGHT ** 2);
+    const half = [lx * flat, ly * flat, LIGHT_HEIGHT + 1];
+    const halfLen = Math.hypot(...half);
+    const [hx, hy, hz] = half.map((v) => v / halfLen);
     for (let y = 0; y < rim.height; y++) {
       const py = (y + 0.5) / dpr - hh;
       const sheen = (1 - (py + hh) / height) * 0.05;
@@ -303,6 +360,10 @@ export class LiquidGlass {
           const light = amt ** 3 * (0.55 * Math.max(facing, 0) + 0.22 * Math.max(-facing, 0));
           const hairline = (1 - Math.min(-d / 1.5, 1)) * 0.35;
           a += (light + hairline) * rimStrength;
+          // The bevel is a quarter circle, so amt is the sine of the surface's tilt
+          const nz = Math.sqrt(1 - amt * amt);
+          const spec = Math.max(nx * amt * hx + ny * amt * hy + nz * hz, 0) ** 48;
+          a += specular * spec * 1.4 + fresnel * (1 - nz) ** 3 * 0.5;
         }
         const i = (y * rim.width + x) * 4;
         rd.data[i] = rd.data[i + 1] = rd.data[i + 2] = 255;
@@ -312,7 +373,7 @@ export class LiquidGlass {
     rctx.putImageData(rd, 0, 0);
     rim.style.background = tint;
 
-    // One displacement pass, or one per colour channel for dispersion
+    // One displacement pass, or one per colour channel for dispersion, then the tone
     const href = map.toDataURL();
     const c = chroma * 0.35;
     const displace = (k, result) =>
@@ -328,15 +389,18 @@ export class LiquidGlass {
            <feColorMatrix in="db" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="b" />
            <feComposite in="r" in2="g" operator="arithmetic" k2="1" k3="1" result="rg" />
            <feComposite in="rg" in2="b" operator="arithmetic" k2="1" k3="1" />`
-        : displace(1, "out"));
+        : displace(1, "out")) +
+      this.#tone();
+    this.displacers = [...this.filter.querySelectorAll("feDisplacementMap")].map((el) => [el, Number(el.getAttribute("scale"))]);
 
     Object.assign(this.frost.style, {
-      left: `${-pad}px`,
-      top: `${-pad}px`,
-      width: `${width + pad * 2}px`,
-      height: `${height + pad * 2}px`,
-      filter: frost > 0 ? `blur(${frost / 2}px)` : "none",
+      left: `${hw - mhw - pad}px`,
+      top: `${hh - mhh - pad}px`,
+      width: `${(mhw + pad) * 2}px`,
+      height: `${(mhh + pad) * 2}px`,
+      transform: z === 1 ? "" : `scale(${z})`,
     });
+    this.#applyButton();
     if (!this.anchor) {
       this.el.style.width = `${width}px`;
       this.el.style.height = `${height}px`;
@@ -345,25 +409,54 @@ export class LiquidGlass {
     this.shapeDirty = false;
   }
 
+  // Saturation around Rec. 709 luma, then brightness as an offset, in one matrix
+  #tone() {
+    const { brightness: b, saturation } = this.params;
+    if (!b && !saturation) return "";
+    const s = 1 + saturation;
+    const rows = [0, 1, 2].map((i) =>
+      [...LUMA.map((l, j) => l * (1 - s) + (i === j ? s : 0)), 0, b].map((v) => +v.toFixed(4)).join(" "),
+    );
+    return `<feColorMatrix type="matrix" values="${rows.join("  ")}  0 0 0 1 0" />`;
+  }
+
+  // Frost blur, plus the button's hover and press state
+  #applyButton() {
+    const { frost } = this.params;
+    const parts = frost > 0 ? [`blur(${frost / 2 / this.params.zoom}px)`] : [];
+    if (this.button) {
+      const h = this.hovered.value;
+      const p = this.pressed.value;
+      for (const [el, base] of this.displacers) el.setAttribute("scale", base * (1 - 0.6 * p));
+      parts.push(`brightness(${1 + 0.12 * h - 0.04 * p})`);
+      this.el.style.boxShadow = `0 ${12 - 8 * p}px ${34 - 18 * p}px -6px rgb(0 0 0 / ${0.35 + 0.15 * p})`;
+    }
+    this.frost.style.filter = parts.join(" ") || "none";
+  }
+
   // Keep the copy lined up with the original under the glass. Squash and press scale the whole
   // lens, copy included, since Safari can't take a transform on the copy itself.
   #place() {
     const { width, height } = this.params;
     const source = this.sourceRect;
+    // Whole CSS pixels: browsers rasterise the filter on the CSS pixel grid, so at a fractional
+    // position the refraction is resampled and visibly jumps against the settled frame
+    const snap = Math.round;
     let left, top;
 
     if (this.anchor) {
       ({ left, top } = this.anchor.getBoundingClientRect());
     } else {
       const s = this.scale.value;
-      left = this.x.value - width / 2;
-      top = this.y.value - height / 2;
+      left = snap(this.x.value - width / 2);
+      top = snap(this.y.value - height / 2);
       this.el.style.transform =
         `translate(${left}px, ${top}px) scale(${s * this.stretchX.value}, ${s * this.stretchY.value})`;
     }
 
-    this.copyHost.style.left = `${this.pad + source.left - left}px`;
-    this.copyHost.style.top = `${this.pad + source.top - top}px`;
+    // The copy sits unscaled around the lens centre, so the layer's zoom magnifies it there
+    this.copyHost.style.left = `${snap(this.inner.x + source.left - left - width / 2)}px`;
+    this.copyHost.style.top = `${snap(this.inner.y + source.top - top - height / 2)}px`;
   }
 
   // Moves the lens to a point in viewport (client) coordinates
@@ -406,6 +499,14 @@ export class LiquidGlass {
       }
       animating = this.springs.some((s) => !s.settled);
       for (const s of this.springs) s.step(dt);
+    }
+
+    if (this.button && (!this.hovered.settled || !this.pressed.settled)) {
+      for (const s of [this.hovered, this.pressed]) {
+        if (this.reducedMotion) s.snap(s.target);
+        else s.step(dt);
+      }
+      this.#applyButton();
     }
 
     const changed = this.copyDirty || this.shapeDirty || this.rectDirty;

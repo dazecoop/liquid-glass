@@ -20,7 +20,8 @@ const indent = (text, spaces) =>
 const standaloneModule = () => glassSource.replace("export class LiquidGlass", "class LiquidGlass").trim();
 
 function snippet({ params, imageUrl }) {
-  const { tint, ...lens } = params;
+  const { tint, ...rest } = params;
+  const lens = tint ? params : rest;
   const settings = JSON.stringify(lens, null, 2).replace(/"(\w+)":/g, "$1:");
   return `<!-- The lens refracts everything inside this element. Put your own HTML in it. -->
 <main id="liquid-glass-scene" style="position:relative;display:grid;place-items:center;height:480px;border-radius:24px;overflow:hidden;touch-action:none;background:#111 url('${imageUrl ?? PLACEHOLDER_IMAGE}') center/cover">
@@ -150,5 +151,5 @@ export function initDeveloper({ glass, getImageUrl, onToggle }) {
     URL.revokeObjectURL(link.href);
   });
 
-  return { render, get isOpen() { return isOpen; } };
+  return { render, open: () => setOpen(true), get isOpen() { return isOpen; } };
 }
