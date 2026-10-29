@@ -4,7 +4,7 @@ A "liquid glass" lens that refracts, frosts and splits the light of real HTML be
 
 Built with vanilla JavaScript, SVG filters, [Vite](https://vite.dev) and [Tailwind CSS](https://tailwindcss.com).
 
-![Liquid Glass lens over a night-sky lake scene, with the tuning controls below](docs/screenshot.png)
+![Liquid Glass lens over a night-sky lake scene, with the tuning controls below](docs/animation.gif)
 
 > [!NOTE]
 > Live demo: [glass.dazemx.com](https://glass.dazemx.com/)
