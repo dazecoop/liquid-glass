@@ -196,7 +196,6 @@ export class LiquidGlass {
     this.el = document.createElement("div");
     this.el.dataset.glass = "";
     this.el.setAttribute("aria-hidden", "true");
-    this.el.inert = true;
     this.el.style.cssText = "pointer-events:none;overflow:hidden;box-shadow:0 12px 34px -6px rgb(0 0 0 / 0.35)";
     if (this.anchor) {
       // Sit behind the anchor's content, inside its own stacking context
@@ -215,7 +214,10 @@ export class LiquidGlass {
     this.view = document.createElement("div");
     this.view.style.cssText = `position:absolute;inset:0;overflow:hidden;filter:url(#${id})`;
 
+    // The copy is inert, so find-in-page, focus and screen readers skip it. The glass itself
+    // isn't: a lens given pointer-events can then be a handle (the demo's dome is dragged)
     this.copyHost = document.createElement("div");
+    this.copyHost.inert = true;
     this.copyHost.style.cssText = "position:absolute;left:0;top:0";
 
     // Rim lighting, sheen and the milky body
