@@ -458,9 +458,10 @@ export class LiquidGlass {
   #place() {
     const { width, height } = this.params;
     const source = this.sourceRect;
-    // Whole CSS pixels: browsers rasterise the filter on the CSS pixel grid, so at a fractional
-    // position the refraction is resampled and visibly jumps against the settled frame
-    const snap = Math.round;
+    // Whole device pixels: off the pixel grid the filtered copy is resampled and shimmers, but
+    // whole CSS pixels are 2 device pixels on retina, and slow moves visibly step
+    const dpr = devicePixelRatio || 1;
+    const snap = (v) => Math.round(v * dpr) / dpr;
     let left, top;
 
     if (this.anchor) {
@@ -622,13 +623,19 @@ export class LiquidGlass {
     let animating = false;
     if (!this.anchor) {
       if (!this.reducedMotion) {
-        const vx = Math.abs(this.x.velocity);
-        const vy = Math.abs(this.y.velocity);
+        // Slow moves don't stretch: a scale just off 1 makes the browser re-render the
+        // filtered layer at that scale, and the refraction pops
+        const vx = Math.max(Math.abs(this.x.velocity) - 150, 0);
+        const vy = Math.max(Math.abs(this.y.velocity) - 150, 0);
         this.stretchX.target = 1 + Math.min(vx / 5000, 0.22) - Math.min(vy / 9000, 0.1);
         this.stretchY.target = 1 + Math.min(vy / 5000, 0.22) - Math.min(vx / 9000, 0.1);
       }
       animating = this.springs.some((s) => !s.settled);
-      for (const s of this.springs) s.step(dt);
+      // Settled springs land exactly on target, so the lens rests at scale 1, not 1.006
+      for (const s of this.springs) {
+        s.step(dt);
+        if (s.settled) s.snap(s.target);
+      }
       if (this.pop) {
         this.#popFrame(now);
         animating = true;
