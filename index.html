@@ -31,6 +31,18 @@
     <meta name="twitter:image:alt" content="The words Liquid Glass on a night-sky lake, with a glass lens bending the letters" />
     <link rel="preconnect" href="https://images.pexels.com" />
     <link rel="stylesheet" href="/src/style.css" />
+    <!-- The OS and browser, on <html> before first paint, for the hero's iOS Safari height (style.css).
+         Every iOS browser is WebKit, but only Safari floats its toolbar over the page; iPadOS
+         reports itself as a Mac, so a touch-capable "Mac" counts as iOS -->
+    <script>
+      (function () {
+        var ua = navigator.userAgent;
+        var ios = /iP(hone|ad|od)/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+        var browser = /Safari\//.test(ua) && !/Chrome|Chromium|CriOS|FxiOS|EdgiOS|OPiOS|GSA\/|Android/.test(ua) ? "safari" : "other";
+        document.documentElement.dataset.os = ios ? "ios" : "other";
+        document.documentElement.dataset.browser = browser;
+      })();
+    </script>
     <script type="module" src="/src/main.js"></script>
   </head>
   <body class="bg-black font-sans text-white antialiased">
@@ -50,13 +62,13 @@
     </nav>
 
     <main>
-    <section id="scene" aria-label="Liquid glass demo" class="relative h-svh overflow-hidden select-none">
+    <section id="scene" aria-label="Liquid glass demo" class="relative overflow-hidden select-none">
     <img id="bg" alt="" class="absolute inset-0 size-full touch-none object-cover" draggable="false" />
     <div class="absolute inset-0 touch-none bg-linear-to-r from-[rgb(2_6_18/0.6)] via-[rgb(2_6_18/0.25)] via-55% to-transparent"></div>
     <div class="absolute inset-x-0 bottom-0 h-48 touch-none bg-linear-to-b from-transparent to-black/70"></div>
 
     <!-- Title -->
-    <div class="absolute inset-x-0 top-16 bottom-75 flex touch-none flex-col justify-center px-[max(1rem,5.5vw)] select-text max-sm:bottom-35">
+    <div class="absolute inset-x-0 top-16 bottom-[calc(18.75rem+var(--chin))] flex touch-none flex-col justify-center px-[max(1rem,5.5vw)] select-text max-sm:bottom-[calc(8.75rem+var(--chin))]">
       <!-- Frame rate. data-glass-skip: its per-frame updates don't make the lens re-copy the hero -->
       <div aria-hidden="true" data-glass-skip class="glass mb-5 flex w-fit items-center gap-2.5 rounded-xl py-1.5 pr-1.5 pl-3 text-xs text-white/90 select-none">
         <span class="tabular-nums"><span id="fps-value" class="inline-block w-[3ch] text-right font-semibold">–</span> fps</span>
@@ -76,7 +88,7 @@
       </div>
     </div>
 
-    <div id="overlay" class="pointer-events-none absolute inset-x-0 top-12 bottom-0 flex flex-col justify-between p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">
+    <div id="overlay" class="pointer-events-none absolute inset-x-0 top-12 bottom-0 flex flex-col justify-between p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[calc(max(1rem,env(safe-area-inset-bottom))+var(--chin))] sm:p-6 sm:pb-[calc(1.5rem+var(--chin))]">
       <!-- Header -->
       <header class="flex items-start justify-between gap-4">
         <p id="hint" class="glass ml-auto rounded-full px-4 py-2 text-sm whitespace-nowrap text-white/90 transition duration-700">

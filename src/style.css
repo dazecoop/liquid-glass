@@ -160,6 +160,22 @@
   .detail-d {
     @apply mt-2 text-[15px] leading-normal text-pretty text-[#86868b];
   }
+  /* The hero runs down to the screen's bottom edge, behind the browser's toolbar: it's sized to
+     the large viewport, and its content sits in a "chin" above the small one, so it stays
+     where the toolbar leaves it visible. On desktop the two viewports match and the chin is
+     nothing. Safari 26 on iPhone ends 100lvh 58px short of the edge (measured in the iOS 26
+     Simulator for tck-plastering), so there the hero adds those 58px. */
+  #scene {
+    --hero-h: 100lvh;
+    --chin: calc(var(--hero-h) - 100svh);
+    height: var(--hero-h);
+  }
+  @media (max-width: 39.99rem) {
+    :where([data-os="ios"][data-browser="safari"]) #scene {
+      --hero-h: calc(100lvh + 58px);
+    }
+  }
+
   /* The page nav: solid black at the very top, frosted glass once scrolled */
   .site-nav {
     background: rgb(0 0 0);
