@@ -24,7 +24,6 @@
 // the bevel rounds over, which gives a Blinn-Phong specular spot and a fresnel edge glow.
 
 const SVG_NS = "http://www.w3.org/2000/svg";
-const LIGHT = [-0.55, -0.83]; // top-left, y down
 const LIGHT_HEIGHT = 0.5; // sine of the light's elevation above the glass
 const LUMA = [0.2126, 0.7152, 0.0722];
 // The rim profile is a circular arc, cut off just short of vertical: a truly vertical edge
@@ -45,12 +44,23 @@ let uid = 0;
 
 // Critically-ish damped spring, integrated per frame
 class Spring {
-  constructor(value, { stiffness = 260, damping = 26 } = {}) {
+  // `wake` is called whenever the target changes, so a sleeping lens starts moving
+  constructor(value, { stiffness = 260, damping = 26 } = {}, wake = null) {
+    this.wake = wake;
     this.value = value;
     this.target = value;
     this.velocity = 0;
     this.stiffness = stiffness;
     this.damping = damping;
+  }
+
+  get target() {
+    return this._target;
+  }
+
+  set target(v) {
+    this._target = v;
+    this.wake?.();
   }
 
   step(dt) {
@@ -117,14 +127,15 @@ export class LiquidGlass {
     };
 
     this.reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    this.x = new Spring(innerWidth / 2);
-    this.y = new Spring(innerHeight / 2);
-    this.scale = new Spring(1, { stiffness: 320, damping: 18 });
+    const wake = () => this.#wake();
+    this.x = new Spring(innerWidth / 2, undefined, wake);
+    this.y = new Spring(innerHeight / 2, undefined, wake);
+    this.scale = new Spring(1, { stiffness: 320, damping: 18 }, wake);
     this.stretchX = new Spring(1, { stiffness: 180, damping: 14 });
     this.stretchY = new Spring(1, { stiffness: 180, damping: 14 });
     this.springs = [this.x, this.y, this.scale, this.stretchX, this.stretchY];
-    this.hovered = new Spring(0, UI_SPRING);
-    this.pressed = new Spring(0, UI_SPRING);
+    this.hovered = new Spring(0, UI_SPRING, wake);
+    this.pressed = new Spring(0, UI_SPRING, wake);
     this.scrolled = new Set();
     this.popScale = 1;
 
@@ -134,8 +145,22 @@ export class LiquidGlass {
     this.copyDirty = true;
     this.placeDirty = true;
 
+    this.#wake();
+  }
+
+  // The frame loop sleeps once nothing is moving or waiting to be redrawn, so an idle or
+  // hidden lens costs nothing per frame or per scroll; anything that changes it wakes it
+  #awake = false;
+  #wake() {
+    if (this.#awake) return;
+    this.#awake = true;
     this.last = performance.now();
     requestAnimationFrame((t) => this.#frame(t));
+  }
+
+  // Shown, or showing: anchored glass always is; a lens while visible or popping
+  get #shown() {
+    return Boolean(this.anchor || this.visible || this.pop);
   }
 
   #build() {
@@ -212,10 +237,17 @@ export class LiquidGlass {
   }
 
   #observe() {
-    const dirty = () => (this.copyDirty = true);
+    const dirty = () => {
+      this.copyDirty = true;
+      if (this.#shown) this.#wake();
+    };
     // Changes inside any glass (copies being swapped, lenses moving) don't count
     new MutationObserver((records) => {
-      if (records.some((r) => !insideGlass(r.target))) dirty();
+      // Style changes on [data-glass-skip] (something the page animates every frame, kept
+      // out of the copy by its own CSS) don't count either, or the copy would re-clone per frame
+      const counts = (r) =>
+        !insideGlass(r.target) && !(r.type === "attributes" && r.target.closest?.("[data-glass-skip]"));
+      if (records.some(counts)) dirty();
     }).observe(this.source, { subtree: true, childList: true, attributes: true, characterData: true });
     this.source.addEventListener("input", dirty, true);
     this.source.addEventListener(
@@ -229,7 +261,12 @@ export class LiquidGlass {
     );
     addEventListener("resize", dirty);
     // Page scroll only moves the source, so just re-measure it
-    addEventListener("scroll", () => (this.rectDirty = true), { passive: true });
+    // (a hidden lens is re-measured when it's next shown)
+    addEventListener("scroll", () => {
+      if (!this.#shown) return;
+      this.rectDirty = true;
+      this.#wake();
+    }, { passive: true });
   }
 
   #syncCopy() {
@@ -284,6 +321,7 @@ export class LiquidGlass {
   #buildShape() {
     const { width, height, radius, bevel: depth, refraction, frost, chroma, zoom, specular, fresnel, tint, rim: rimStrength } =
       this.params;
+    const body = this.params.body ?? 1;
     const dpr = Math.min(devicePixelRatio || 1, 2);
     const hw = width / 2;
     const hh = height / 2;
@@ -315,7 +353,11 @@ export class LiquidGlass {
 
     // Displacement map: a circular-bevel rim, encoded around 0.5. It's drawn at device
     // resolution, since the rim bends steeply and a coarser map shows steps.
-    const scale = mrefraction * 2 + 1;
+    // The encoding's range: twice the strongest bend, either way round
+    const scale = mrefraction * 2 + Math.sign(mrefraction || 1);
+    // UIKit's profile (falloff > 0): the bend is strongest at the very edge and decays by e
+    // every `falloff` px inward, reaching the whole lens; otherwise a circular bevel
+    const mfalloff = (this.params.falloff ?? 0) / z;
     const map = document.createElement("canvas");
     map.width = Math.ceil((mhw + pad) * 2 * mres);
     map.height = Math.ceil((mhh + pad) * 2 * mres);
@@ -328,9 +370,15 @@ export class LiquidGlass {
         let ox = 0;
         let oy = 0;
         const d = msdf(px, py);
-        if (d < 0 && d > -mbevel && refraction > 0) {
-          const rim = (1 + d / mbevel) * ARC;
-          const bend = ((1 - Math.sqrt(1 - rim * rim)) / ARC_DROP) * mrefraction;
+        // Negative refraction bends the other way, pulling in what's round the lens
+        const exp = mfalloff > 0;
+        if (d < 0 && (exp ? d > -mfalloff * 6 : d > -mbevel) && refraction !== 0) {
+          let bend;
+          if (exp) bend = Math.exp(d / mfalloff) * mrefraction;
+          else {
+            const rim = (1 + d / mbevel) * ARC;
+            bend = ((1 - Math.sqrt(1 - rim * rim)) / ARC_DROP) * mrefraction;
+          }
           const nx = msdf(px + 0.5 / mres, py) - msdf(px - 0.5 / mres, py);
           const ny = msdf(px, py + 0.5 / mres) - msdf(px, py - 0.5 / mres);
           const len = Math.hypot(nx, ny) || 1;
@@ -350,8 +398,10 @@ export class LiquidGlass {
     rim.height = Math.ceil(height * dpr);
     const rctx = rim.getContext("2d");
     const rd = rctx.createImageData(rim.width, rim.height);
-    const lx = LIGHT[0] / Math.hypot(...LIGHT);
-    const ly = LIGHT[1] / Math.hypot(...LIGHT);
+    // Where the light comes from, in degrees (y down): -123.5 is top left; UIKit's is -140
+    const angle = ((this.params.lightAngle ?? -123.5) * Math.PI) / 180;
+    const lx = Math.cos(angle);
+    const ly = Math.sin(angle);
     // Blinn-Phong half vector between the light and a viewer looking straight down
     const flat = Math.sqrt(1 - LIGHT_HEIGHT ** 2);
     const half = [lx * flat, ly * flat, LIGHT_HEIGHT + 1];
@@ -364,7 +414,7 @@ export class LiquidGlass {
         const px = (x + 0.5) / dpr - hw;
         const d = sdf(px, py);
         if (d > 0) continue;
-        let a = 0.06 + sheen;
+        let a = (0.06 + sheen) * body;
         if (d > -bevel) {
           const amt = 1 + d / bevel;
           const [nx, ny] = normal(px, py, 1 / dpr);
@@ -512,7 +562,10 @@ export class LiquidGlass {
     if (toneOnly && !this.shapeDirty && this.filterBase) {
       this.#writeFilter();
       this.#applyButton();
-    } else this.shapeDirty = true;
+    } else {
+      this.shapeDirty = true;
+      this.#wake();
+    }
   }
 
   // Fades the lens in or out. With { pop: true } it pops like a bubble on the way out and
@@ -521,6 +574,9 @@ export class LiquidGlass {
   show(visible, { pop = false } = {}) {
     if (visible === this.visible) return;
     this.visible = visible;
+    // Hidden, it skipped re-measuring and re-copying: catch up now
+    if (visible) this.rectDirty = true;
+    this.#wake();
     this.el.getAnimations().forEach((a) => a.cancel());
     if (!pop || this.reducedMotion) {
       this.pop = null;
@@ -616,7 +672,6 @@ export class LiquidGlass {
   }
 
   #frame(now) {
-    requestAnimationFrame((t) => this.#frame(t));
     const dt = Math.min((now - this.last) / 1000, 1 / 30);
     this.last = now;
 
@@ -627,8 +682,10 @@ export class LiquidGlass {
         // filtered layer at that scale, and the refraction pops
         const vx = Math.max(Math.abs(this.x.velocity) - 150, 0);
         const vy = Math.max(Math.abs(this.y.velocity) - 150, 0);
-        this.stretchX.target = 1 + Math.min(vx / 5000, 0.22) - Math.min(vy / 9000, 0.1);
-        this.stretchY.target = 1 + Math.min(vy / 5000, 0.22) - Math.min(vx / 9000, 0.1);
+        // `stretch` scales the squash and stretch: 0 off, 1 as before
+        const k = this.params.stretch ?? 1;
+        this.stretchX.target = 1 + k * (Math.min(vx / 5000, 0.22) - Math.min(vy / 9000, 0.1));
+        this.stretchY.target = 1 + k * (Math.min(vy / 5000, 0.22) - Math.min(vx / 9000, 0.1));
       }
       animating = this.springs.some((s) => !s.settled);
       // Settled springs land exactly on target, so the lens rests at scale 1, not 1.006
@@ -650,7 +707,8 @@ export class LiquidGlass {
       this.#applyButton();
     }
 
-    const sync = this.copyDirty && now - this.syncedAt >= this.throttle;
+    // A hidden lens's copy waits until it's shown
+    const sync = this.copyDirty && this.#shown && now - this.syncedAt >= this.throttle;
     const changed = sync || this.shapeDirty || this.rectDirty;
     if (sync) {
       this.#syncCopy();
@@ -662,8 +720,16 @@ export class LiquidGlass {
     this.rectDirty = false;
     // An anchor can measure zero before it's laid out; wait until it has a size
     if (this.shapeDirty && this.params.width >= 1 && this.params.height >= 1) this.#buildShape();
-    if (!this.inner) return;
-    if (animating || changed || this.placeDirty) this.#place();
+    // (placing needs the source measured, which a lens not yet shown hasn't been)
+    if (this.inner && this.sourceRect && (animating || changed || this.placeDirty)) this.#place();
     this.placeDirty = animating;
+
+    // Keep going while anything moves or waits (a copy throttled, a shape awaiting a size, a
+    // shown copy out of date); otherwise sleep until woken
+    const buttonMoving = this.button && (!this.hovered.settled || !this.pressed.settled);
+    const waiting =
+      this.shapeDirty || this.rectDirty || this.placeDirty || (this.copyDirty && this.#shown) || !this.inner;
+    if (animating || buttonMoving || waiting) requestAnimationFrame((t) => this.#frame(t));
+    else this.#awake = false;
   }
 }

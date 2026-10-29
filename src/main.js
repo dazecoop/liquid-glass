@@ -2,6 +2,7 @@ import hljs from "highlight.js/lib/core";
 import { LiquidGlass } from "./glass.js";
 import { initDeveloper } from "./developer.js";
 import { initFps } from "./fps.js";
+import { initComponents } from "./components.js";
 
 document.documentElement.classList.add("js");
 
@@ -402,6 +403,17 @@ const nearFeatures = new IntersectionObserver(
   { rootMargin: "800px 0px" },
 );
 nearFeatures.observe($("#features"));
+
+// UI components: built when their section comes near, as the feature demos are
+const nearComponents = new IntersectionObserver(
+  ([entry]) => {
+    if (!entry.isIntersecting) return;
+    nearComponents.disconnect();
+    initComponents($("#components"));
+  },
+  { rootMargin: "800px 0px" },
+);
+nearComponents.observe($("#components"));
 
 // Dome: a lens living inside its tile. It follows the cursor, or a finger dragging it, and
 // springs home to the middle when let go.

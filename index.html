@@ -40,6 +40,7 @@
         <a href="#scene" class="text-[15px] font-semibold tracking-[-0.01em]">Liquid Glass</a>
         <div class="flex items-center gap-5 text-xs">
           <a href="#features" class="text-white/70 transition hover:text-white max-md:hidden">Features</a>
+          <a href="#components" class="text-white/70 transition hover:text-white max-md:hidden">Components</a>
           <a href="#how" class="text-white/70 transition hover:text-white max-sm:hidden">How it works</a>
           <a href="#compare" class="text-white/70 transition hover:text-white max-md:hidden">Compare</a>
           <a href="#code" class="text-white/70 transition hover:text-white">Code</a>
@@ -270,6 +271,149 @@
       </div>
     </section>
 
+
+    <!-- UI components -->
+    <section id="components" class="scroll-mt-12 px-4 py-24 sm:px-6 sm:py-32">
+      <div class="mx-auto max-w-5xl">
+        <header data-reveal class="mx-auto max-w-3xl text-center">
+          <h2 class="display">UI components.</h2>
+          <p class="lede mx-auto mt-6 max-w-2xl">A switch, a tab bar and a button, built on the lens and tuned side by side with iOS 26, down to its springs. <strong>Hover, press and drag them.</strong></p>
+        </header>
+
+        <div class="mt-16 grid gap-4 sm:mt-20">
+          <!-- Switch -->
+          <article data-reveal class="tile">
+            <div class="p-7 sm:p-10">
+              <p class="eyebrow">Switch</p>
+              <h3 class="tile-title mt-2">A thumb that turns to&nbsp;glass.</h3>
+              <p class="tile-copy mt-3">Solid at rest. Hover, press or drag and the thumb dissolves into a lens that bends the track around it, then sets back down once it stops. Plain, or with a label each side.</p>
+            </div>
+            <div class="cmp-pair">
+              <div data-theme="light" class="cmp-surface">
+                <p class="cmp-theme">Light</p>
+                <div class="cmp-list">
+                  <div class="cmp-row">
+                    <span id="wifi-light">Wi-Fi</span>
+                    <button type="button" role="switch" aria-checked="true" aria-labelledby="wifi-light" class="lg-switch" data-glass-switch>
+                      <span class="refract" aria-hidden="true"></span><span class="thumb" aria-hidden="true"></span><span data-opt></span><span data-opt></span>
+                    </button>
+                  </div>
+                  <div class="cmp-row">
+                    <span id="bt-light">Bluetooth</span>
+                    <button type="button" role="switch" aria-checked="false" aria-labelledby="bt-light" class="lg-switch" data-glass-switch>
+                      <span class="refract" aria-hidden="true"></span><span class="thumb" aria-hidden="true"></span><span data-opt></span><span data-opt></span>
+                    </button>
+                  </div>
+                  <div class="cmp-row">
+                    <span id="bill-light">Billing</span>
+                    <div role="radiogroup" aria-labelledby="bill-light" class="lg-segment" data-glass-switch>
+                      <span class="refract" aria-hidden="true"></span><span class="thumb" aria-hidden="true"></span>
+                      <button type="button" role="radio" aria-checked="true" data-opt>Monthly</button>
+                      <button type="button" role="radio" aria-checked="false" data-opt>Yearly</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div data-theme="dark" class="cmp-surface">
+                <p class="cmp-theme">Dark</p>
+                <div class="cmp-list">
+                  <div class="cmp-row">
+                    <span id="wifi-dark">Wi-Fi</span>
+                    <button type="button" role="switch" aria-checked="true" aria-labelledby="wifi-dark" class="lg-switch" data-glass-switch>
+                      <span class="refract" aria-hidden="true"></span><span class="thumb" aria-hidden="true"></span><span data-opt></span><span data-opt></span>
+                    </button>
+                  </div>
+                  <div class="cmp-row">
+                    <span id="bt-dark">Bluetooth</span>
+                    <button type="button" role="switch" aria-checked="false" aria-labelledby="bt-dark" class="lg-switch" data-glass-switch>
+                      <span class="refract" aria-hidden="true"></span><span class="thumb" aria-hidden="true"></span><span data-opt></span><span data-opt></span>
+                    </button>
+                  </div>
+                  <div class="cmp-row">
+                    <span id="bill-dark">Billing</span>
+                    <div role="radiogroup" aria-labelledby="bill-dark" class="lg-segment" data-glass-switch>
+                      <span class="refract" aria-hidden="true"></span><span class="thumb" aria-hidden="true"></span>
+                      <button type="button" role="radio" aria-checked="true" data-opt>Monthly</button>
+                      <button type="button" role="radio" aria-checked="false" data-opt>Yearly</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- Tab bar -->
+          <article data-reveal class="tile">
+            <div class="p-7 sm:p-10">
+              <p class="eyebrow">Tab bar</p>
+              <h3 class="tile-title mt-2">Press, then slide between&nbsp;tabs.</h3>
+              <p class="tile-copy mt-3">A lens lifts off the current tab and follows your finger, the bar swelling as you press. Let go and it lands on the nearest tab, hangs a moment, and sets down.</p>
+            </div>
+            <div class="cmp-pair">
+              <div data-theme="light" class="cmp-surface cmp-phone">
+                <p class="cmp-theme">Light</p>
+                <div class="cmp-feed" aria-hidden="true">
+                  <h4>Listen now</h4>
+                  <div class="cmp-art a"></div>
+                  <div class="cmp-cards"><div class="cmp-art b"></div><div class="cmp-art c"></div></div>
+                  <h4>Recently played</h4>
+                  <div class="cmp-cards"><div class="cmp-art c"></div><div class="cmp-art a"></div></div>
+                </div>
+                <nav class="lg-tabs" data-glass-tabs aria-label="Demo tab bar, light">
+                  <span class="lg-pill" aria-hidden="true" hidden></span>
+                  <span class="lg-glowbox" aria-hidden="true"><span class="lg-glow"></span></span>
+                  <button type="button" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5H15v-6h-6v6H5.5A1.5 1.5 0 0 1 4 19z"/></svg>Home</button><button type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.8"/><rect x="13" y="4" width="7" height="7" rx="1.8"/><rect x="4" y="13" width="7" height="7" rx="1.8"/><rect x="13" y="13" width="7" height="7" rx="1.8"/></svg>Browse</button><button type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2.2"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/></svg>Radio</button><button type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4v16M9.5 4v16M14 5l4.5 14.5"/></svg>Library</button><button type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>Search</button>
+                </nav>
+              </div>
+              <div data-theme="dark" class="cmp-surface cmp-phone">
+                <p class="cmp-theme">Dark</p>
+                <div class="cmp-feed" aria-hidden="true">
+                  <h4>Listen now</h4>
+                  <div class="cmp-art a"></div>
+                  <div class="cmp-cards"><div class="cmp-art b"></div><div class="cmp-art c"></div></div>
+                  <h4>Recently played</h4>
+                  <div class="cmp-cards"><div class="cmp-art c"></div><div class="cmp-art a"></div></div>
+                </div>
+                <nav class="lg-tabs" data-glass-tabs aria-label="Demo tab bar, dark">
+                  <span class="lg-pill" aria-hidden="true" hidden></span>
+                  <span class="lg-glowbox" aria-hidden="true"><span class="lg-glow"></span></span>
+                  <button type="button" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5H15v-6h-6v6H5.5A1.5 1.5 0 0 1 4 19z"/></svg>Home</button><button type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.8"/><rect x="13" y="4" width="7" height="7" rx="1.8"/><rect x="4" y="13" width="7" height="7" rx="1.8"/><rect x="13" y="13" width="7" height="7" rx="1.8"/></svg>Browse</button><button type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2.2"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/></svg>Radio</button><button type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4v16M9.5 4v16M14 5l4.5 14.5"/></svg>Library</button><button type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>Search</button>
+                </nav>
+              </div>
+            </div>
+          </article>
+
+          <!-- Button -->
+          <article data-reveal class="tile">
+            <div class="p-7 sm:p-10">
+              <p class="eyebrow">Button</p>
+              <h3 class="tile-title mt-2">Clear at rest, lit when you reach for&nbsp;it.</h3>
+              <p class="tile-copy mt-3">A clear lens over whatever is behind it. Hover and it grows and fills with its tint; press and it swells a little more, with a glow under your finger. With an icon, or with words.</p>
+            </div>
+            <div class="cmp-pair">
+              <div data-theme="light" class="cmp-surface cmp-buttons">
+                <p class="cmp-theme">Light</p>
+                <div data-glass-source class="cmp-backdrop" aria-hidden="true">
+                  <div class="cmp-card"><span>Lake Louise</span><small>14 mi</small></div>
+                </div>
+                <button type="button" class="lg-button lg-icon" aria-label="Add" data-glass-button><span class="lg-content"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span></button>
+                <button type="button" class="lg-button lg-share" aria-label="Share" data-glass-button><span class="lg-content"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M8 7.5 12 3.5l4 4M7 10.5H6A1.5 1.5 0 0 0 4.5 12v7A1.5 1.5 0 0 0 6 20.5h12a1.5 1.5 0 0 0 1.5-1.5v-7a1.5 1.5 0 0 0-1.5-1.5h-1"/></svg></span></button>
+                <button type="button" class="lg-button lg-label" data-glass-button><span class="lg-content"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Add stop</span></span></button>
+              </div>
+              <div data-theme="dark" class="cmp-surface cmp-buttons">
+                <p class="cmp-theme">Dark</p>
+                <div data-glass-source class="cmp-backdrop" aria-hidden="true">
+                  <div class="cmp-card"><span>Lake Louise</span><small>14 mi</small></div>
+                </div>
+                <button type="button" class="lg-button lg-icon" aria-label="Add" data-glass-button><span class="lg-content"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span></button>
+                <button type="button" class="lg-button lg-share" aria-label="Share" data-glass-button><span class="lg-content"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M8 7.5 12 3.5l4 4M7 10.5H6A1.5 1.5 0 0 0 4.5 12v7A1.5 1.5 0 0 0 6 20.5h12a1.5 1.5 0 0 0 1.5-1.5v-7a1.5 1.5 0 0 0-1.5-1.5h-1"/></svg></span></button>
+                <button type="button" class="lg-button lg-label" data-glass-button><span class="lg-content"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Add stop</span></span></button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
 
     <!-- How it works -->
     <section id="how" class="scroll-mt-12 px-4 py-24 sm:px-6 sm:py-32">
