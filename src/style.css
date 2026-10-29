@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./liquid-glass.css";
 
 @theme {
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
@@ -23,7 +24,7 @@
 }
 
 #dev-code.hljs,
-#start-code.hljs {
+#dev-cmp-code.hljs {
   background: transparent;
   padding: 0;
 }
@@ -159,6 +160,50 @@
   .detail-d {
     @apply mt-2 text-[15px] leading-normal text-pretty text-[#86868b];
   }
+  /* Use it anywhere: the install guide, the component code and the reference */
+  .dev-tab {
+    @apply shrink-0 rounded-full px-2.5 py-1.5 text-white/60 sm:px-4 transition hover:text-white focus-visible:outline-2 focus-visible:outline-white aria-selected:bg-white/15 aria-selected:text-white;
+  }
+  .dev-pm {
+    @apply rounded-full px-2.5 py-1 text-white/55 transition hover:text-white focus-visible:outline-2 focus-visible:outline-white aria-checked:bg-white/15 aria-checked:text-white;
+  }
+  .dev-primary {
+    @apply flex h-9 items-center justify-center gap-2 rounded-full bg-white px-4 text-[13px] font-medium text-black transition hover:bg-white/90 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white;
+  }
+  .dev-secondary {
+    @apply flex h-9 items-center justify-center gap-2 rounded-full px-3.5 text-[13px] font-medium text-white/85 ring-1 ring-white/20 transition hover:bg-white/10 hover:text-white active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-white;
+  }
+  .dev-icon {
+    @apply grid size-8 place-items-center rounded-full text-white/70 transition hover:bg-white/10 hover:text-white active:scale-[0.94] focus-visible:outline-2 focus-visible:outline-white data-copied:text-[#30d158];
+  }
+  .dev-code {
+    @apply overflow-auto rounded-[20px] bg-black/50 p-5 ring-1 ring-white/10 [scrollbar-color:rgb(255_255_255/0.2)_transparent] [scrollbar-width:thin] sm:p-6;
+  }
+  .dev-ref > div {
+    @apply border-t border-white/10 py-3 first:border-0 first:pt-0;
+  }
+  .dev-ref dt {
+    @apply font-mono text-[13px] break-words text-[#f5f5f7];
+  }
+  .dev-ref dd {
+    @apply mt-1 text-[14px] leading-normal text-pretty text-[#86868b];
+  }
+  .dev-params {
+    @apply grid gap-x-8 sm:grid-cols-2;
+  }
+  .dev-params > div {
+    @apply grid grid-cols-[1fr_auto] gap-x-3 border-t border-white/10 py-3;
+  }
+  .dev-params dt {
+    @apply font-mono text-[13px] text-[#f5f5f7];
+  }
+  .dev-params dd {
+    @apply font-mono text-[12px] text-[#86868b];
+  }
+  .dev-params .desc {
+    @apply col-span-2 font-sans mt-1 text-[14px] leading-normal text-pretty text-[#86868b];
+  }
+
   .grid-lines {
     background-image:
       linear-gradient(rgb(255 255 255 / 0.22) 1px, transparent 1px),
@@ -215,36 +260,16 @@
 }
 
 
-/* ---------- UI components (src/components.js) ---------- */
+/* ---------- UI components (src/components.js) ----------
+   Their own styles are in liquid-glass.css, the package's stylesheet; this is the demo's
+   layout around them */
 
-/* iOS's system colours, light and dark */
+/* iOS's grouped list card, light and dark; switches sit on it */
 [data-theme="light"] {
-  --bg: #f2f2f7;
   --card: #ffffff;
-  --label: #000000;
-  --label-2: rgb(60 60 67 / 0.6);
-  --fill: rgb(120 120 128 / 0.16);
-  --off: #e9e9eb;
-  --on: #34c759;
-  --accent: #007aff;
-  --platter: rgb(255 255 255 / 0.72);
-  --platter-solid: #f7f7f8;
-  --pill: rgb(0 0 0 / 0.07);
-  --lens-shadow: 0 0 0 0.5px rgb(0 0 0 / 0.1), 0 7px 18px rgb(0 0 0 / 0.12);
 }
 [data-theme="dark"] {
-  --bg: #000000;
   --card: #1c1c1e;
-  --label: #ffffff;
-  --label-2: rgb(235 235 245 / 0.6);
-  --fill: rgb(118 118 128 / 0.24);
-  --off: #39393d;
-  --on: #30d158;
-  --accent: #0a84ff;
-  --platter: rgb(30 30 33 / 0.62);
-  --platter-solid: #1c1c1f;
-  --pill: rgb(0 0 0 / 0.5);
-  --lens-shadow: 0 7px 18px -2px rgb(0 0 0 / 0.5);
 }
 
 /* The demo surfaces: a light and a dark one side by side */
@@ -255,8 +280,8 @@
   position: relative;
   overflow: hidden;
   border-radius: 20px;
-  background: var(--bg);
-  color: var(--label);
+  background: var(--lg-surface);
+  color: var(--lg-label);
   user-select: none;
   -webkit-user-select: none;
 }
@@ -270,9 +295,10 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--label-2);
+  color: var(--lg-label-2);
 }
 .cmp-list {
+  --lg-surface: var(--card);
   margin: 48px 16px 24px;
   border-radius: 26px;
   background: var(--card);
@@ -288,133 +314,10 @@
   letter-spacing: -0.02em;
 }
 .cmp-row + .cmp-row {
-  border-top: 0.5px solid var(--fill);
+  border-top: 0.5px solid var(--lg-fill);
 }
 
-/* Switches. Each lens sits over the thumb and under the labels, and refracts .refract: a bar
-   in the track's colour, hidden on the page and shown only in the lens's copy, ringed there
-   by a wide solid shadow in the card's colour, so the glass never bends see-through pixels */
-.lg-switch,
-.lg-segment {
-  --p: 0;
-  position: relative;
-  display: inline-grid;
-  grid-template-columns: 1fr 1fr;
-  border: 0;
-  border-radius: 999px;
-  cursor: pointer;
-  touch-action: pan-y;
-  -webkit-tap-highlight-color: transparent;
-}
-.lg-switch:focus-visible,
-.lg-segment button:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-.lg-switch .thumb,
-.lg-segment .thumb {
-  position: absolute;
-  border-radius: 999px;
-  transition: translate 0.35s cubic-bezier(0.32, 0.72, 0, 1);
-}
-.lg-switch.glassy .thumb,
-.lg-segment.glassy .thumb {
-  transition: opacity 0.18s;
-}
-.lg-switch.lifted .thumb,
-.lg-segment.lifted .thumb {
-  opacity: 0;
-}
-.lg-switch .refract,
-.lg-segment .refract {
-  position: absolute;
-  inset: 12.5% auto 12.5% 0;
-  border-radius: 999px;
-  opacity: 0;
-  pointer-events: none;
-}
-.lg-switch .refract[data-glass-copy],
-.lg-segment .refract[data-glass-copy] {
-  opacity: 1;
-  box-shadow: 0 0 0 80px var(--card);
-}
-.lg-switch [data-glass],
-.lg-segment [data-glass] {
-  z-index: 2 !important;
-  background: var(--card);
-  box-shadow: var(--lens-shadow) !important;
-}
-
-/* The plain switch: 64 × 28, a white thumb as tall as the track, the track turning green
-   as the thumb crosses */
-.lg-switch {
-  width: 64px;
-  height: 28px;
-  padding: 0;
-  background: color-mix(in srgb, var(--off), var(--on) calc(var(--p) * 100%));
-}
-.lg-switch .thumb {
-  inset: 0 auto 0 0;
-  width: 40px;
-  background: #fff;
-  box-shadow:
-    0 1px 3px rgb(0 0 0 / 0.2),
-    0 3px 8px rgb(0 0 0 / 0.12);
-}
-.lg-switch .refract {
-  background: color-mix(in srgb, var(--off), var(--on) calc(var(--p) * 100%));
-}
-
-/* With words: a label each side, the thumb in the accent */
-.lg-segment {
-  padding: 3px;
-  background: var(--fill);
-}
-.lg-segment .thumb {
-  inset: 3px auto 3px 3px;
-  width: calc(50% - 3px);
-  background: var(--accent);
-}
-.lg-segment .refract {
-  background: var(--accent);
-}
-.lg-segment button {
-  position: relative;
-  z-index: 3;
-  min-width: 84px;
-  padding: 6px 14px;
-  border: 0;
-  border-radius: 999px;
-  background: none;
-  color: var(--label-2);
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  cursor: pointer;
-  transition: color 0.3s;
-}
-.lg-segment button[aria-checked="true"] {
-  color: #fff;
-}
-
-/* Pressed: a soft white glow under the finger, inside the lens */
-[data-glass] > .lg-glow {
-  position: absolute;
-  width: 48px;
-  height: 48px;
-  margin: -24px 0 0 -24px;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, rgb(255 255 255 / 0.7), rgb(255 255 255 / 0));
-  opacity: 0;
-  transition: opacity 0.3s;
-  pointer-events: none;
-}
-.pressing > [data-glass] > .lg-glow {
-  opacity: 0.45;
-  transition-duration: 0.12s;
-}
-
-/* Tab bar: a floating platter of regular glass over a feed */
+/* Tab bar: floating over a feed */
 .cmp-phone {
   height: 420px;
 }
@@ -454,133 +357,16 @@
 .cmp-art.c {
   background: linear-gradient(200deg, #64d2ff, #30d158 70%);
 }
-.lg-tabs {
+.cmp-phone .lg-tabs {
   position: absolute;
   left: 50%;
   bottom: 18px;
   translate: -50% 0;
-  isolation: isolate;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
   width: calc(100% - 28px);
   max-width: 380px;
-  padding: 4px;
-  color: var(--label);
-  touch-action: pan-y;
-}
-.lg-tabs::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: 999px;
-  background: var(--platter);
-  backdrop-filter: blur(14px) saturate(1.6);
-  box-shadow:
-    inset 0 0.5px 0 rgb(255 255 255 / 0.22),
-    inset 0 0 0 0.5px rgb(255 255 255 / 0.1),
-    0 0 0 0.5px rgb(0 0 0 / 0.06),
-    0 10px 30px rgb(0 0 0 / 0.25);
-  transition: scale 0.3s cubic-bezier(0.3, 1.25, 0.5, 1);
-}
-/* Pressed, the bar swells 3.55%, as UIKit's does */
-.lg-tabs.pressing::before {
-  scale: 1.0355;
-}
-.lg-tabs button {
-  display: grid;
-  justify-items: center;
-  gap: 1px;
-  padding: 7px 0 6px;
-  border: 0;
-  border-radius: 999px;
-  background: none;
-  color: inherit;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-.lg-tabs button:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
-}
-.lg-tabs svg {
-  width: 25px;
-  height: 25px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.7;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.lg-tabs [aria-current] {
-  color: var(--accent);
-}
-.lg-tabs [aria-current] svg {
-  fill: color-mix(in srgb, var(--accent), transparent 80%);
-}
-/* UIKit's resting selection: a pill behind the current tab, hidden under the lens */
-.lg-tabs .lg-pill {
-  position: absolute;
-  z-index: -1;
-  border-radius: 999px;
-  background: var(--pill);
-  pointer-events: none;
-  transition:
-    opacity 0.2s,
-    left 0.35s cubic-bezier(0.3, 1.2, 0.5, 1),
-    width 0.35s cubic-bezier(0.3, 1.2, 0.5, 1);
-}
-.lg-tabs .lg-pill[hidden],
-.lg-tabs.lensing > .lg-pill {
-  display: block;
-  opacity: 0;
-}
-.lg-tabs .lg-glowbox {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  overflow: hidden;
-  border-radius: 999px;
-  pointer-events: none;
-}
-.lg-tabs .lg-glow {
-  position: absolute;
-  width: 72px;
-  height: 72px;
-  margin: -36px 0 0 -36px;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, rgb(255 255 255 / 0.5), rgb(255 255 255 / 0));
-  opacity: 0;
-  transition: opacity 0.25s;
-}
-.lg-tabs.pressing .lg-glow {
-  opacity: 0.6;
-}
-.lg-tabs [data-glass] {
-  background: var(--bg);
-  box-shadow: var(--lens-shadow) !important;
-}
-/* Its copy of the bar, under the lens: in place, the platter solid (the copy can't frost),
-   every tab in the accent, no pill or glow */
-.lg-tabs[data-glass-copy] {
-  translate: none;
-}
-.lg-tabs[data-glass-copy]::before {
-  background: var(--platter-solid);
-  box-shadow: 0 0 0 80px var(--bg);
-}
-.lg-tabs[data-glass-copy] button {
-  color: var(--accent);
-}
-.lg-tabs[data-glass-copy] .lg-pill,
-.lg-tabs[data-glass-copy] .lg-glowbox {
-  display: none;
 }
 
-/* Buttons: clear glass over a card's corner, lighting up in the accent */
+/* Buttons: clear glass over a card's corner */
 .cmp-buttons {
   height: 260px;
 }
@@ -604,109 +390,17 @@
   bottom: 18px;
   font-size: 15px;
   font-weight: 400;
-  color: var(--label-2);
-}
-.lg-button {
-  --s: 1;
-  --lit: 0;
-  --tint: var(--accent);
-  position: absolute;
-  z-index: 3;
-  isolation: isolate;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  height: 48px;
-  padding: 0;
-  border: 0;
-  border-radius: 999px;
-  background: none;
-  /* The label turns white as the tint fills in */
-  color: color-mix(in srgb, var(--label), #fff calc(var(--lit) * 100%));
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  cursor: pointer;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-.lg-button:focus-visible {
-  outline: none;
-}
-/* The content grows with the lens, as one piece */
-.lg-content {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  scale: var(--s);
-}
-.lg-button svg {
-  width: 22px;
-  height: 22px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2.4;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-/* The tint (lighting up as the lens grows, a little lighter below, catching the light on its
-   rim) and the glow, together clipped to the button */
-.lg-button .lg-clip {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  overflow: hidden;
-  border-radius: inherit;
-  scale: var(--s);
-  pointer-events: none;
-}
-.lg-button .lg-clip::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(to bottom, var(--tint), color-mix(in srgb, var(--tint), #fff 14%));
-  box-shadow:
-    inset 1.5px 1.5px 1px -0.5px rgb(255 255 255 / 0.55),
-    inset -1px -1px 1px -0.5px rgb(255 255 255 / 0.3);
-  opacity: calc(var(--lit) * var(--lit-max, 1));
-  transition: filter 0.2s;
-}
-.lg-button.pressing .lg-clip::before {
-  filter: brightness(1.1);
-}
-.lg-button .lg-glow {
-  position: absolute;
-  width: 56px;
-  height: 56px;
-  margin: -28px 0 0 -28px;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, rgb(255 255 255 / 0.7), rgb(255 255 255 / 0));
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-.lg-button.hovering .lg-glow {
-  opacity: 0.2;
-}
-.lg-button.pressing .lg-glow {
-  opacity: 0.45;
-  transition-duration: 0.12s;
-}
-.cmp-buttons [data-glass] {
-  background: var(--bg);
-  box-shadow: 0 6px 16px -4px rgb(0 0 0 / 0.3) !important;
-}
-[data-theme="light"].cmp-buttons [data-glass] {
-  box-shadow:
-    0 0 0 0.5px rgb(0 0 0 / 0.08),
-    0 6px 16px -4px rgb(0 0 0 / 0.18) !important;
+  color: var(--lg-label-2);
 }
 /* All in the card: the icon buttons (circles) top right, the worded one bottom left */
+.cmp-buttons .lg-button {
+  position: absolute;
+}
 .lg-icon,
 .lg-share {
   top: 58px;
   width: 48px;
+  padding: 0;
 }
 .lg-share {
   right: 30px;

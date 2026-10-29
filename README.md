@@ -49,35 +49,68 @@ Chrome, Firefox and Safari, on desktop and mobile.
 
 Limitations of the copy: it doesn't show hover or focus states, `backdrop-filter` blur inside it is dropped (see above), and WebGL canvases and `<video>` aren't copied. IDs are removed from the copy so they stay unique, so style content inside the source with classes rather than `#id` selectors.
 
-## Getting started
+## Install
 
 ```sh
-bun install
-bun run dev
+npm install @dazecoop/liquid-glass
 ```
 
-Then open the URL Vite prints. `bun run build` outputs a static site to `dist/`.
+One package with three ways in. The core has no dependencies, and React is an optional peer.
 
-npm works too: `npm install && npm run dev`.
+| Import | What it is |
+| --- | --- |
+| `@dazecoop/liquid-glass` | `LiquidGlass`, plus the `GlassSwitch`, `GlassTabBar` and `GlassButton` components (ESM and CommonJS) |
+| `@dazecoop/liquid-glass/react` | React components and a `useLiquidGlass` hook |
+| `@dazecoop/liquid-glass/style.css` | Styles for the UI components (the lens itself needs none) |
 
-## Use it on your own site
+TypeScript types are included.
 
-Tune the lens on the demo, then scroll to the **Code** section to copy or download the snippet. It's an element to put your HTML in, plus a script with no dependencies and no build step.
+### React
 
-If you use a bundler, copy [`src/glass.js`](src/glass.js) into your project instead:
+```jsx
+import { GlassScene, LiquidGlass } from "@dazecoop/liquid-glass/react";
+
+export function Hero() {
+  return (
+    // The lens follows the pointer over everything inside, refracting it
+    <GlassScene glass={{ ...LiquidGlass.presets.frosted, width: 240 }} style={{ height: 480 }}>
+      <h1>Liquid Glass</h1>
+    </GlassScene>
+  );
+}
+```
+
+Every component builds its glass after mount and destroys it on unmount, so StrictMode, route changes and server rendering are all fine. The file is marked `"use client"` for the Next.js app router.
+
+| Component | Description |
+| --- | --- |
+| `<GlassScene glass>` | A lens that follows the pointer over its children, clipped to the scene |
+| `<GlassPanel source button glass>` | An element with glass as its background, refracting `source` (a ref; its parent by default) |
+| `<GlassSwitch checked onChange>` | The switch. Controlled, or uncontrolled with `defaultChecked` |
+| `<GlassSegment options value onChange>` | A switch with a label each side: two `options`, as strings or `{ value, label }` |
+| `<GlassTabBar items value onChange>` | The floating tab bar. `items` are `{ value, label, icon?, href? }` |
+| `<GlassButton tint source>` | Clear glass that lights up in `tint`. Refracts its parent's `[data-glass-source]` child, or `source` |
+| `useLiquidGlass(sourceRef, options)` | Returns the `LiquidGlass` instance for anything custom. Pass `anchor` or `container` as refs |
+
+Components take a `look` prop to override their glass parameters, and pass other props (`className`, `style`, `aria-*`) to their element.
+
+### JavaScript
 
 ```js
-import { LiquidGlass } from "./glass.js";
+import { LiquidGlass } from "@dazecoop/liquid-glass";
 
 // The lens refracts everything inside this element
 const scene = document.querySelector("main");
-const glass = new LiquidGlass(scene);
+const glass = new LiquidGlass(scene, { container: scene });
 
 glass.set({ width: 280, height: 180, radius: 64 });
 
-addEventListener("pointermove", (e) => glass.moveTo(e.clientX, e.clientY));
-addEventListener("pointerdown", () => glass.press(true));
-addEventListener("pointerup", () => glass.press(false));
+scene.addEventListener("pointermove", (e) => glass.moveTo(e.clientX, e.clientY));
+scene.addEventListener("pointerdown", () => glass.press(true));
+scene.addEventListener("pointerup", () => glass.press(false));
+
+// When it's no longer needed
+glass.destroy();
 ```
 
 To give an element a glass background instead, anchor the glass to it. Add `button: true` to make it respond to hover and press:
@@ -94,7 +127,62 @@ const glass = new LiquidGlass(scene, { ...LiquidGlass.presets.frosted, frost: 8 
 glass.set(LiquidGlass.presets.dark);
 ```
 
-### API
+### Script tag
+
+No install and no build step. The script defines one global, `LiquidGlass`:
+
+```html
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@dazecoop/liquid-glass@0/lib/liquid-glass.css" />
+<script src="https://cdn.jsdelivr.net/npm/@dazecoop/liquid-glass@0/lib/liquid-glass.global.js"></script>
+<script>
+  const glass = new LiquidGlass(document.querySelector("main"));
+  LiquidGlass.initComponents(); // any switches, tab bars and buttons in the page
+</script>
+```
+
+You can also tune the lens on the [demo](https://glass.dazemx.com/) and copy the code from its **Use it anywhere** section, written for React, JavaScript, a script tag, or as one self-contained file.
+
+## UI components
+
+A switch, a segmented switch, a floating tab bar and a glass button, after iOS 26. Import `style.css` once. In React, use the components above. In HTML, write the markup and call `initComponents()`:
+
+```html
+<button type="button" role="switch" aria-checked="true" aria-label="Wi-Fi" class="lg-switch" data-glass-switch>
+  <span class="refract"></span><span class="thumb"></span><span data-opt></span><span data-opt></span>
+</button>
+
+<div role="radiogroup" aria-label="Billing" class="lg-segment" data-glass-switch>
+  <span class="refract"></span><span class="thumb"></span>
+  <button type="button" role="radio" aria-checked="true" data-opt>Monthly</button>
+  <button type="button" role="radio" aria-checked="false" data-opt>Yearly</button>
+</div>
+
+<nav class="lg-tabs" aria-label="Main" data-glass-tabs>
+  <span class="lg-pill" hidden></span>
+  <span class="lg-glowbox"><span class="lg-glow"></span></span>
+  <button type="button" aria-current="page">Home</button>
+  <button type="button">Search</button>
+</nav>
+
+<!-- The button's lens lives in its (positioned) parent and refracts the [data-glass-source] -->
+<div style="position:relative">
+  <div data-glass-source><img src="map.jpg" alt="" /></div>
+  <button type="button" class="lg-button" data-glass-button><span class="lg-content">Add stop</span></button>
+</div>
+```
+
+```js
+import { initComponents } from "@dazecoop/liquid-glass";
+
+const components = initComponents(); // or initComponents(someElement)
+// Later: components.forEach((c) => c.destroy());
+```
+
+Switches and tab bars fire a bubbling `change` event (`event.detail.value` is 0 or 1 for a switch, `event.detail.tab` is the element for a tab bar).
+
+The dark look is the default. Put `data-theme="light"` on any ancestor for the light one. Every colour is a custom property (`--lg-accent`, `--lg-on`, `--lg-surface` and so on, listed at the top of [`src/liquid-glass.css`](src/liquid-glass.css)), so a theme is a handful of overrides. `--lg-surface` should match the colour right behind a component.
+
+## API
 
 | Method | Description |
 | --- | --- |
@@ -104,6 +192,7 @@ glass.set(LiquidGlass.presets.dark);
 | `moveTo(x, y)` | Moves the lens to a point in viewport (client) coordinates. |
 | `press(down)` | Grows the lens slightly while `true`. |
 | `show(visible, { pop })` | Fades the lens in or out. With `pop: true` it bursts like a bubble on the way out and swells back in. `moveTo` shows it again. |
+| `destroy()` | Removes the glass and everything it added to the page, and stops its listeners and observers. Safe to call twice. The components have `destroy()` too. |
 
 | Parameter | Default | Description |
 | --- | --- | --- |
@@ -121,14 +210,30 @@ glass.set(LiquidGlass.presets.dark);
 | `tint` | `""` | A CSS colour laid over the glass, for legibility |
 | `rim` | `1` | Strength of the rim lighting and edge hairline, `0` to `1` |
 
+## Development
+
+```sh
+bun install
+bun run dev
+```
+
+Then open the URL Vite prints. `bun run build` outputs the demo site to `dist/`, and `bun run build:lib` outputs the package to `lib/`.
+
+npm works too: `npm install && npm run dev`.
+
 ## Project structure
 
 ```
-index.html          Page and UI markup (Tailwind)
-src/glass.js        LiquidGlass: the copy, SVG filter, displacement map and spring physics
-src/main.js         Demo UI: backgrounds, presets, sliders, pointer handling, page sections
-src/developer.js    Developer panel and snippet generator
-src/style.css       Tailwind entry and custom slider styles
+index.html            Demo page markup (Tailwind)
+src/glass.js          LiquidGlass: the copy, SVG filter, displacement map and spring physics
+src/components.js     GlassSwitch, GlassTabBar and GlassButton
+src/liquid-glass.css  The components' styles (the package's style.css)
+src/react.jsx         React bindings
+src/index.js          Package entry; src/global.js is the script tag's
+types/                TypeScript definitions
+src/main.js           Demo UI: backgrounds, presets, sliders, pointer handling, page sections
+src/developer.js      The demo's code guide and snippet generator
+src/style.css         Demo styles (Tailwind)
 ```
 
 ## Credits
@@ -140,3 +245,13 @@ Lighting, tone, presets, the dome bevel and button mode are adapted from [ybouan
 Background photos from [Pexels](https://www.pexels.com).
 
 Not affiliated with Apple.
+
+## Support
+
+If my projects have been useful to you and you'd like to support the work, you can buy me a coffee. Completely optional, but always appreciated!
+
+<a href="https://www.buymeacoffee.com/dazecoop" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+
+## Licence
+
+MIT. See [LICENSE](LICENSE).

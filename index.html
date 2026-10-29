@@ -724,38 +724,166 @@
     <section id="code" class="scroll-mt-12 px-4 py-24 sm:px-6 sm:py-32">
       <div class="mx-auto max-w-4xl">
         <header data-reveal class="text-center">
-          <h2 class="display">Drop it in.</h2>
-          <p class="lede mx-auto mt-6 max-w-xl"><a href="#scene" class="text-[#2997ff] hover:underline">Tune the lens</a> and this code follows along. <strong>No build step, no dependencies.</strong> Copy the snippet, or download a page that runs on its own.</p>
+          <h2 class="display">Use it anywhere.</h2>
+          <p class="lede mx-auto mt-6 max-w-xl">One small package for plain JavaScript, React or a single script tag. <strong>No dependencies.</strong> <a href="#scene" class="text-[#2997ff] hover:underline">Tune the lens</a> and the code below follows along.</p>
+          <ul class="mt-8 flex flex-wrap justify-center gap-2" aria-label="Package details">
+            <li class="tag">Vanilla JS</li>
+            <li class="tag">React 18+</li>
+            <li class="tag">TypeScript types</li>
+            <li class="tag">SSR safe</li>
+            <li class="tag">~10 kB gzipped</li>
+          </ul>
         </header>
 
+        <!-- Install: the tuned lens, four ways -->
         <div id="dev" data-reveal class="tile mt-12 p-3 sm:p-4">
           <div class="flex flex-wrap items-center justify-between gap-3 p-1">
-            <div role="tablist" aria-label="Code" class="flex gap-1 rounded-full bg-black/40 p-1 text-[13px] font-medium">
-              <button role="tab" type="button" data-tab="snippet" aria-selected="true" class="rounded-full px-4 py-1.5 text-white/60 transition hover:text-white aria-selected:bg-white/15 aria-selected:text-white focus-visible:outline-2 focus-visible:outline-white">Snippet</button>
-              <button role="tab" type="button" data-tab="module" aria-selected="false" tabindex="-1" class="rounded-full px-4 py-1.5 font-mono text-white/60 transition hover:text-white aria-selected:bg-white/15 aria-selected:text-white focus-visible:outline-2 focus-visible:outline-white">glass.js</button>
+            <div role="tablist" aria-label="How to use it" class="flex max-w-full gap-1 overflow-x-auto rounded-full bg-black/40 p-1 text-[13px] font-medium [scrollbar-width:none]">
+              <button role="tab" type="button" data-tab="react" aria-selected="true" class="dev-tab">React</button>
+              <button role="tab" type="button" data-tab="module" aria-selected="false" tabindex="-1" class="dev-tab">JavaScript</button>
+              <button role="tab" type="button" data-tab="cdn" aria-selected="false" tabindex="-1" class="dev-tab">Script tag</button>
+              <button role="tab" type="button" data-tab="snippet" aria-selected="false" tabindex="-1" class="dev-tab">Single file</button>
             </div>
             <div class="flex gap-2">
-              <button id="dev-copy" type="button" class="flex h-9 items-center justify-center gap-2 rounded-full bg-white px-4 text-[13px] font-medium text-black transition hover:bg-white/90 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+              <button id="dev-copy" type="button" class="dev-primary">
                 <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></svg>
-                <span aria-live="polite">Copy</span>
+                <span data-label aria-live="polite">Copy</span>
               </button>
-              <button id="dev-download" type="button" class="flex h-9 items-center justify-center gap-2 rounded-full px-4 text-[13px] font-medium text-white/85 ring-1 ring-white/20 transition hover:bg-white/10 hover:text-white active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-white">
+              <button id="dev-download" type="button" class="dev-secondary">
                 <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 21h14" /></svg>
-                Download
+                <span class="sr-only">Download</span><span id="dev-download-name" class="hidden font-mono text-[12px] sm:inline">Hero.jsx</span>
               </button>
             </div>
           </div>
 
-          <p id="dev-note" hidden class="mx-1 mt-3 rounded-xl bg-amber-400/15 px-3 py-2 text-xs text-amber-100 ring-1 ring-amber-300/25">
+          <p id="dev-hint" class="mx-2 mt-2 text-[14px] text-pretty text-[#86868b]"></p>
+
+          <div id="dev-install" class="mt-3 flex flex-wrap items-center gap-2 rounded-[20px] bg-black/50 p-1.5 pl-4 ring-1 ring-white/10 sm:flex-nowrap">
+            <span class="font-mono text-[13px] text-white/35 select-none" aria-hidden="true">$</span>
+            <code id="dev-install-cmd" class="min-w-0 basis-[calc(100%-2rem)] truncate sm:flex-1 sm:basis-auto font-mono text-[13px] text-[#f5f5f7]">npm install @dazecoop/liquid-glass</code>
+            <div class="-ml-2.5 flex w-full items-center justify-between gap-1.5 sm:ml-0 sm:w-auto">
+              <div role="radiogroup" aria-label="Package manager" class="flex gap-0.5 rounded-full bg-white/[0.06] p-0.5 text-[12px] font-medium">
+                <button role="radio" type="button" data-pm="npm" aria-checked="true" class="dev-pm">npm</button>
+                <button role="radio" type="button" data-pm="pnpm" aria-checked="false" tabindex="-1" class="dev-pm">pnpm</button>
+                <button role="radio" type="button" data-pm="yarn" aria-checked="false" tabindex="-1" class="dev-pm">yarn</button>
+                <button role="radio" type="button" data-pm="bun" aria-checked="false" tabindex="-1" class="dev-pm">bun</button>
+              </div>
+              <button id="dev-install-copy" type="button" aria-label="Copy install command" class="dev-icon">
+                <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></svg>
+              </button>
+            </div>
+          </div>
+
+          <p id="dev-note" hidden class="mt-3 rounded-xl bg-amber-400/15 px-3 py-2 text-xs text-amber-100 ring-1 ring-amber-300/25">
             You're using an uploaded image. Swap <code class="font-mono">your-image.jpg</code> for a URL on your site.
           </p>
 
-          <div role="tabpanel" class="mt-3 h-[min(32rem,70svh)] overflow-auto rounded-[20px] bg-black/50 p-5 ring-1 ring-white/10 [scrollbar-color:rgb(255_255_255/0.2)_transparent] [scrollbar-width:thin] sm:p-6">
+          <div role="tabpanel" aria-label="Code" class="dev-code mt-3 h-[min(32rem,70svh)]">
             <pre class="font-mono text-[12px] leading-relaxed sm:text-[12.5px]"><code id="dev-code" class="hljs"></code></pre>
           </div>
         </div>
 
-        <p data-reveal class="mt-6 text-center text-[15px] text-[#86868b]">Using a bundler? Import <code class="code">src/glass.js</code> directly. <a href="https://github.com/dazecoop/liquid-glass" target="_blank" rel="noopener noreferrer" class="text-[#2997ff] hover:underline">View on GitHub <span aria-hidden="true">›</span></a></p>
+        <!-- Components: React or HTML -->
+        <div id="dev-cmp" data-reveal class="tile mt-6 p-3 sm:p-4">
+          <div class="px-3 pt-4 pb-2 sm:px-4 sm:pt-5">
+            <p class="eyebrow">Components</p>
+            <h3 class="tile-title mt-2">Switches, tabs and buttons.</h3>
+            <p class="tile-copy mt-3 max-w-2xl">Import the stylesheet once. In React each one is a component, controlled or not. In plain HTML, write the markup and call <code class="code">initComponents()</code>. Add <code class="code">data-theme="light"</code> to any ancestor for the light look.</p>
+          </div>
+          <div class="mt-3 flex flex-wrap items-center justify-between gap-3 p-1">
+            <div role="tablist" aria-label="Component" class="flex max-w-full gap-1 overflow-x-auto rounded-full bg-black/40 p-1 text-[13px] font-medium [scrollbar-width:none]">
+              <button role="tab" type="button" data-cmp="switch" aria-selected="true" class="dev-tab">Switch</button>
+              <button role="tab" type="button" data-cmp="segment" aria-selected="false" tabindex="-1" class="dev-tab">Segmented</button>
+              <button role="tab" type="button" data-cmp="tabs" aria-selected="false" tabindex="-1" class="dev-tab">Tab bar</button>
+              <button role="tab" type="button" data-cmp="button" aria-selected="false" tabindex="-1" class="dev-tab">Button</button>
+            </div>
+            <div class="flex items-center gap-2">
+              <div role="radiogroup" aria-label="Flavour" class="flex gap-0.5 rounded-full bg-white/[0.06] p-0.5 text-[12px] font-medium">
+                <button role="radio" type="button" data-flavour="react" aria-checked="true" class="dev-pm">React</button>
+                <button role="radio" type="button" data-flavour="html" aria-checked="false" tabindex="-1" class="dev-pm">HTML</button>
+              </div>
+              <button id="dev-cmp-copy" type="button" class="dev-primary">
+                <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></svg>
+                <span data-label aria-live="polite">Copy</span>
+              </button>
+            </div>
+          </div>
+          <div role="tabpanel" aria-label="Component code" class="dev-code mt-3 max-h-[min(30rem,70svh)]">
+            <pre class="font-mono text-[12px] leading-relaxed sm:text-[12.5px]"><code id="dev-cmp-code" class="hljs"></code></pre>
+          </div>
+        </div>
+
+        <!-- Reference -->
+        <div class="mt-6 grid gap-6 md:grid-cols-2">
+          <div data-reveal class="tile p-6 sm:p-7">
+            <p class="eyebrow">JavaScript</p>
+            <h3 class="tile-title mt-2">The lens.</h3>
+            <dl class="dev-ref mt-5">
+              <div><dt>new LiquidGlass(source, options)</dt><dd>Glass that refracts <code class="code">source</code>, a live element. Floats over the page by default.</dd></div>
+              <div><dt>{ container }</dt><dd>Lives inside an element instead, clipped to it and scrolling with it.</dd></div>
+              <div><dt>{ anchor, button }</dt><dd>Fills an element as its background. <code class="code">button</code> makes it brighten on hover and flatten on press.</dd></div>
+              <div><dt>.moveTo(x, y)</dt><dd>Moves to a point in viewport coordinates, on a spring.</dd></div>
+              <div><dt>.press(down)</dt><dd>Swells a little while <code class="code">true</code>.</dd></div>
+              <div><dt>.show(visible, { pop })</dt><dd>Fades in or out, or pops like a bubble.</dd></div>
+              <div><dt>.set(params)</dt><dd>Changes any parameter on the fly.</dd></div>
+              <div><dt>.destroy()</dt><dd>Removes it and everything it added.</dd></div>
+              <div><dt>LiquidGlass.presets</dt><dd><code class="code">clear</code>, <code class="code">frosted</code>, <code class="code">dark</code>, <code class="code">prism</code>, <code class="code">dome</code>.</dd></div>
+            </dl>
+          </div>
+          <div data-reveal class="tile p-6 sm:p-7">
+            <p class="eyebrow">React</p>
+            <h3 class="tile-title mt-2">The bindings.</h3>
+            <dl class="dev-ref mt-5">
+              <div><dt>&lt;GlassScene glass&gt;</dt><dd>A lens that follows the pointer over its children.</dd></div>
+              <div><dt>&lt;GlassPanel source button&gt;</dt><dd>An element with glass as its background, refracting its parent or <code class="code">source</code>.</dd></div>
+              <div><dt>&lt;GlassSwitch checked onChange&gt;</dt><dd>The switch. Controlled, or uncontrolled with <code class="code">defaultChecked</code>.</dd></div>
+              <div><dt>&lt;GlassSegment options value&gt;</dt><dd>Two labelled options.</dd></div>
+              <div><dt>&lt;GlassTabBar items value&gt;</dt><dd>Tabs as <code class="code">{ value, label, icon, href }</code>.</dd></div>
+              <div><dt>&lt;GlassButton tint&gt;</dt><dd>Clear glass that lights up in <code class="code">tint</code>.</dd></div>
+              <div><dt>useLiquidGlass(ref, options)</dt><dd>The instance itself, for anything custom.</dd></div>
+            </dl>
+            <p class="mt-5 text-[13px] text-[#86868b]">Every one cleans up on unmount and is safe in StrictMode and on the server.</p>
+          </div>
+        </div>
+
+        <div data-reveal class="tile mt-6 p-6 sm:p-7">
+          <p class="eyebrow">Parameters</p>
+          <h3 class="tile-title mt-2">Everything the sliders set.</h3>
+          <dl class="dev-params mt-5">
+            <div><dt>width, height</dt><dd>280, 180</dd><dd class="desc">Size in CSS pixels. Anchored glass takes its anchor's.</dd></div>
+            <div><dt>radius</dt><dd>64</dd><dd class="desc">Corner radius in CSS pixels.</dd></div>
+            <div><dt>bevel</dt><dd>35</dd><dd class="desc">How far the curved rim reaches in. Half the smaller side is a full dome.</dd></div>
+            <div><dt>refraction</dt><dd>40</dd><dd class="desc">How far the rim bends the content, in pixels.</dd></div>
+            <div><dt>frost</dt><dd>2</dd><dd class="desc">Blur radius in pixels.</dd></div>
+            <div><dt>chroma</dt><dd>0.4</dd><dd class="desc">Colour split at the rim, 0 to 1.</dd></div>
+            <div><dt>zoom</dt><dd>1.08</dd><dd class="desc">Magnification across the lens.</dd></div>
+            <div><dt>specular</dt><dd>0.35</dd><dd class="desc">The highlight, 0 to 1.</dd></div>
+            <div><dt>fresnel</dt><dd>0.3</dd><dd class="desc">Edge glow where the glass turns away, 0 to 1.</dd></div>
+            <div><dt>brightness</dt><dd>0</dd><dd class="desc">What's seen through it, −0.5 to 0.5.</dd></div>
+            <div><dt>saturation</dt><dd>0</dd><dd class="desc">What's seen through it, −1 (grey) to 1.</dd></div>
+            <div><dt>tint</dt><dd>""</dd><dd class="desc">A CSS colour laid over the glass.</dd></div>
+            <div><dt>rim</dt><dd>1</dd><dd class="desc">Rim lighting and hairline, 0 to 1.</dd></div>
+          </dl>
+        </div>
+
+        <p data-reveal class="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[15px]">
+          <a href="https://github.com/dazecoop/liquid-glass" target="_blank" rel="noopener noreferrer" class="text-[#2997ff] hover:underline">GitHub <span aria-hidden="true">›</span></a>
+          <a href="https://www.npmjs.com/package/@dazecoop/liquid-glass" target="_blank" rel="noopener noreferrer" class="text-[#2997ff] hover:underline">npm <span aria-hidden="true">›</span></a>
+          <a href="https://github.com/dazecoop/liquid-glass#readme" target="_blank" rel="noopener noreferrer" class="text-[#2997ff] hover:underline">Full docs <span aria-hidden="true">›</span></a>
+        </p>
+      </div>
+    </section>
+
+    <!-- Support -->
+    <section aria-labelledby="support-title" class="px-4 pb-24 sm:px-6">
+      <div data-reveal class="tile mx-auto flex max-w-4xl flex-col items-center gap-6 p-8 text-center sm:flex-row sm:justify-between sm:p-10 sm:text-left">
+        <div>
+          <h2 id="support-title" class="tile-title">Find it useful?</h2>
+          <p class="tile-copy mt-2 max-w-md">It's free and MIT licensed. If it's saved you some time and you'd like to support the work, you can buy me a coffee. Completely optional, but always appreciated!</p>
+        </div>
+        <a href="https://www.buymeacoffee.com/dazecoop" target="_blank" rel="noopener noreferrer" class="shrink-0 rounded-xl transition hover:opacity-90 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2997ff]">
+          <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" width="217" height="60" loading="lazy" class="h-[60px] w-[217px]" />
+        </a>
       </div>
     </section>
 
