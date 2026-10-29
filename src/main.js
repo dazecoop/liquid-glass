@@ -548,6 +548,45 @@ $("#try-preset").addEventListener("click", () => {
   scene.scrollIntoView();
 });
 
+// How it works, step 1: the layers start flat in one stack and pull apart as the diagram
+// scrolls up into view, finishing a little above the middle of the screen
+
+const layersSvg = $("#how-layers");
+const FLAT = 92;
+const layers = [...layersSvg.querySelectorAll("[data-layer]")].map((el) => ({
+  el,
+  to: Number(el.dataset.layer),
+  label: el.tagName === "text",
+}));
+let layersFrame = 0;
+
+function explode() {
+  layersFrame = 0;
+  const r = layersSvg.getBoundingClientRect();
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // 0 as the top of the diagram enters at the bottom, 1 once its middle reaches 55% height
+  const raw = (innerHeight - r.top) / (innerHeight * 0.45 + r.height / 2);
+  const t = reduced ? 1 : Math.max(0, Math.min(raw, 1));
+  const e = 1 - (1 - t) ** 3;
+  for (const { el, to, label } of layers) {
+    const y = FLAT + (to - FLAT) * e;
+    if (label) {
+      el.setAttribute("y", y + 80);
+      el.style.opacity = Math.max(0, (e - 0.4) / 0.6);
+    } else {
+      el.setAttribute("transform", `matrix(1 0.5 -1 0.5 210 ${y})`);
+    }
+  }
+}
+
+const onLayersScroll = () => (layersFrame ||= requestAnimationFrame(explode));
+new IntersectionObserver(([entry]) => {
+  if (entry.isIntersecting) addEventListener("scroll", onLayersScroll, { passive: true });
+  else removeEventListener("scroll", onLayersScroll);
+  explode();
+}).observe(layersSvg);
+explode();
+
 // How it works: draw the hero lens's own displacement map and lighting layer, and redraw
 // them while the section is in view and the lens changes
 
