@@ -126,6 +126,7 @@ export class LiquidGlass {
     this.hovered = new Spring(0, UI_SPRING);
     this.pressed = new Spring(0, UI_SPRING);
     this.scrolled = new Set();
+    this.popScale = 1;
 
     this.#build();
     this.#observe();
@@ -464,7 +465,7 @@ export class LiquidGlass {
     if (this.anchor) {
       ({ left, top } = this.anchor.getBoundingClientRect());
     } else {
-      const s = this.scale.value;
+      const s = this.scale.value * this.popScale;
       left = snap(this.x.value - width / 2);
       top = snap(this.y.value - height / 2);
       this.el.style.transform =
@@ -510,24 +511,50 @@ export class LiquidGlass {
     else this.shapeDirty = true;
   }
 
-  // Fades the lens in or out. With { pop: true } it bursts like a bubble on the way out and
-  // swells back in.
+  // Fades the lens in or out. With { pop: true } it pops like a bubble on the way out and
+  // swells back in. The pop runs through the frame loop's own transform: a separate CSS
+  // `scale` would also scale the lens's position, and it would dart away as it popped.
   show(visible, { pop = false } = {}) {
     if (visible === this.visible) return;
     this.visible = visible;
+    this.el.getAnimations().forEach((a) => a.cancel());
     if (!pop || this.reducedMotion) {
+      this.pop = null;
+      this.popScale = 1;
       this.el.style.transition = "opacity .3s";
       this.el.style.opacity = visible ? "1" : "0";
       return;
     }
     this.el.style.transition = "none";
-    this.el.style.opacity = visible ? "1" : "0";
-    // The `scale` property composes with the transform the frame loop writes
-    const frames = visible
-      ? [{ opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1 }]
-      : [{ opacity: 1, scale: 1 }, { opacity: 0, scale: 1.3 }];
-    this.el.animate(frames, visible ? { duration: 420, easing: "cubic-bezier(.34,1.56,.64,1)" } : { duration: 140, easing: "ease-out" });
-    if (!visible) this.#burst();
+    this.pop = { visible, start: performance.now(), burst: !visible };
+  }
+
+  // A bubble swells for a moment, then its film is gone at once. Coming back, it grows from
+  // smaller with a little overshoot.
+  #popFrame(now) {
+    const { visible, start } = this.pop;
+    const t = now - start;
+    let scale, opacity;
+    if (visible) {
+      const k = Math.min(t / 460, 1);
+      const back = 1 + 2.2 * (k - 1) ** 3 + 1.2 * (k - 1) ** 2; // ease-out-back
+      scale = 0.6 + 0.4 * back;
+      opacity = Math.min(t / 140, 1);
+    } else {
+      const k = Math.min(t / 110, 1);
+      scale = 1 + 0.14 * k * k;
+      opacity = t < 110 ? 1 : 0;
+      if (t >= 110 && this.pop.burst) {
+        this.pop.burst = false;
+        this.#burst();
+      }
+    }
+    this.popScale = scale;
+    this.el.style.opacity = String(opacity);
+    if (t >= (visible ? 460 : 110)) {
+      this.pop = null;
+      this.popScale = 1;
+    }
   }
 
   // A ring flash and droplets flying off the rim
@@ -550,29 +577,36 @@ export class LiquidGlass {
 
     add(
       `left:${r.left - origin.left}px;top:${r.top - origin.top}px;width:${r.width}px;height:${r.height}px;` +
-        `border-radius:${this.el.style.borderRadius};box-shadow:inset 0 0 0 1.5px rgb(255 255 255 / .7)`,
-      [{ opacity: 0.9, scale: 1 }, { opacity: 0, scale: 1.4 }],
-      { duration: 280, easing: "cubic-bezier(.2,.7,.3,1)" },
+        `border-radius:${this.el.style.borderRadius};box-shadow:inset 0 0 0 1px rgb(255 255 255 / .8)`,
+      [
+        { opacity: 0.8, transform: "scale(1)" },
+        { opacity: 0, transform: "scale(1.18)" },
+      ],
+      { duration: 200, easing: "cubic-bezier(.2,.7,.3,1)" },
     );
 
-    const count = 14;
+    // Droplets leave the rim along its normal, fly out fast, then slow and drop a little
+    const count = 22;
     for (let i = 0; i < count; i++) {
-      const angle = (i / count) * Math.PI * 2 + Math.random() * 0.4;
+      const angle = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
       const ux = Math.cos(angle);
       const uy = Math.sin(angle);
-      const size = 4 + Math.random() * 6;
-      const reach = 24 + Math.random() * 40;
+      const size = 3 + Math.random() * 4;
+      const reach = 18 + Math.random() * 46;
+      const fall = 14 + Math.random() * 22;
       const x = cx + (ux * r.width) / 2 - origin.left - size / 2;
       const y = cy + (uy * r.height) / 2 - origin.top - size / 2;
+      const mid = `translate(${ux * reach * 0.75}px, ${uy * reach * 0.75}px)`;
+      const end = `translate(${ux * reach}px, ${uy * reach + fall}px) scale(.4)`;
       add(
         `left:${x}px;top:${y}px;width:${size}px;height:${size}px;border-radius:50%;` +
-          "background:radial-gradient(circle at 35% 35%, rgb(255 255 255 / .95), rgb(255 255 255 / .3) 60%, rgb(255 255 255 / .1));" +
-          "box-shadow:0 0 0 .5px rgb(255 255 255 / .4)",
+          "background:radial-gradient(circle at 35% 35%, rgb(255 255 255 / .95), rgb(255 255 255 / .35) 65%, rgb(255 255 255 / .1))",
         [
-          { opacity: 1, transform: "translate(0, 0) scale(1)" },
-          { opacity: 0, transform: `translate(${ux * reach}px, ${uy * reach + 10}px) scale(.3)` },
+          { opacity: 1, transform: "translate(0, 0)", easing: "cubic-bezier(.1,.8,.3,1)" },
+          { opacity: 0.9, transform: mid, offset: 0.35, easing: "cubic-bezier(.4,0,.8,.6)" },
+          { opacity: 0, transform: end },
         ],
-        { duration: 420 + Math.random() * 200, easing: "cubic-bezier(.2,.7,.3,1)" },
+        { duration: 520 + Math.random() * 260 },
       );
     }
   }
@@ -592,6 +626,10 @@ export class LiquidGlass {
       }
       animating = this.springs.some((s) => !s.settled);
       for (const s of this.springs) s.step(dt);
+      if (this.pop) {
+        this.#popFrame(now);
+        animating = true;
+      }
     }
 
     if (this.button && (!this.hovered.settled || !this.pressed.settled)) {
