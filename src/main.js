@@ -549,7 +549,7 @@ $("#try-preset").addEventListener("click", () => {
 });
 
 // How it works, step 1: the layers start flat in one stack and pull apart as the diagram
-// scrolls up into view, finishing a little above the middle of the screen
+// scrolls up the screen
 
 const layersSvg = $("#how-layers");
 const FLAT = 92;
@@ -564,10 +564,11 @@ function explode() {
   layersFrame = 0;
   const r = layersSvg.getBoundingClientRect();
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  // 0 as the top of the diagram enters at the bottom, 1 once its middle reaches 55% height
-  const raw = (innerHeight - r.top) / (innerHeight * 0.45 + r.height / 2);
+  // Starts once the diagram's top is 80% down the screen, after it has faded in, and
+  // finishes when the top reaches 25%, so the whole move happens in plain view
+  const raw = (innerHeight * 0.8 - r.top) / (innerHeight * 0.55);
   const t = reduced ? 1 : Math.max(0, Math.min(raw, 1));
-  const e = 1 - (1 - t) ** 3;
+  const e = t * t * (3 - 2 * t);
   for (const { el, to, label } of layers) {
     const y = FLAT + (to - FLAT) * e;
     if (label) {
