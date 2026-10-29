@@ -6,6 +6,9 @@ Built with vanilla JavaScript, SVG filters, [Vite](https://vite.dev) and [Tailwi
 
 ![Liquid Glass lens over a night-sky lake scene, with the tuning controls below](docs/screenshot.png)
 
+> [!NOTE]
+> Live demo: [glass.dazemx.com](https://glass.dazemx.com/)
+
 ## Features
 
 - Rounded-rectangle lens with a curved, refracting rim, over live HTML
@@ -135,3 +138,5 @@ Inspired by [this CodePen by shingidad](https://codepen.io/shingidad/pen/jEPxMgW
 Lighting, tone, presets, the dome bevel and button mode are adapted from [ybouane/liquidglass](https://github.com/ybouane/liquidglass).
 
 Background photos from [Pexels](https://www.pexels.com).
+
+Not affiliated with Apple.
