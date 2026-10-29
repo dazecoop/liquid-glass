@@ -194,6 +194,8 @@ The dark look is the default. Put `data-theme="light"` on any ancestor for the l
 | `show(visible, { pop })` | Fades the lens in or out. With `pop: true` it bursts like a bubble on the way out and swells back in. `moveTo` shows it again. |
 | `destroy()` | Removes the glass and everything it added to the page, and stops its listeners and observers. Safe to call twice. The components have `destroy()` too. |
 
+The glass re-copies its source whenever the source changes. Put `data-glass-skip` on anything inside it that updates every frame (a counter, a clock, an animated style) and its changes won't trigger a re-copy; the copy shows it as it was at the last one.
+
 | Parameter | Default | Description |
 | --- | --- | --- |
 | `width`, `height` | `280`, `180` | Lens size in CSS pixels (anchored glass takes its anchor's size) |

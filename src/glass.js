@@ -99,6 +99,7 @@ function follow(root, path) {
 }
 
 const insideGlass = (node) => (node.nodeType === 1 ? node : node.parentElement)?.closest("[data-glass]");
+const insideSkip = (node) => (node.nodeType === 1 ? node : node.parentElement)?.closest("[data-glass-skip]");
 
 export class LiquidGlass {
   // Starting looks. Each is plain parameters: glass.set(LiquidGlass.presets.frosted).
@@ -160,6 +161,11 @@ export class LiquidGlass {
   #wake() {
     if (this.#awake || this.destroyed) return;
     this.#awake = true;
+    // A lens on the move is its own layer. At rest it isn't, so the browser redraws it at the
+    // scale it settled at: a layer keeps the bitmap it was first drawn at, and a lens that
+    // grew from small (a component's, built at full size and scaled down) looked fuzzy
+    // (the springs wake it while it's still being built, before it has an element)
+    if (this.el && !this.anchor) this.el.style.willChange = "transform";
     this.last = performance.now();
     this.#raf = requestAnimationFrame((t) => this.#frame(t));
   }
@@ -195,7 +201,7 @@ export class LiquidGlass {
       this.el.style.cssText += ";position:absolute;inset:0;z-index:-1;border-radius:inherit";
     } else {
       const position = this.container ? "absolute;z-index:1" : "fixed;z-index:2147483000";
-      this.el.style.cssText += `;position:${position};left:0;top:0;will-change:transform;opacity:0;transition:opacity .3s`;
+      this.el.style.cssText += `;position:${position};left:0;top:0;opacity:0;transition:opacity .3s`;
       if (this.container && getComputedStyle(this.container).position === "static") this.#style(this.container, "position", "relative");
     }
 
@@ -267,10 +273,10 @@ export class LiquidGlass {
     };
     // Changes inside any glass (copies being swapped, lenses moving) don't count
     const mutations = new MutationObserver((records) => {
-      // Style changes on [data-glass-skip] (something the page animates every frame, kept
-      // out of the copy by its own CSS) don't count either, or the copy would re-clone per frame
-      const counts = (r) =>
-        !insideGlass(r.target) && !(r.type === "attributes" && r.target.closest?.("[data-glass-skip]"));
+      // Nor do changes inside [data-glass-skip]: something that updates every frame (a
+      // counter, a clock, a style the page animates), or the copy would re-clone per frame.
+      // The copy keeps it as it was at the last re-copy.
+      const counts = (r) => !insideGlass(r.target) && !insideSkip(r.target);
       if (records.some(counts)) dirty();
     });
     mutations.observe(this.source, { subtree: true, childList: true, attributes: true, characterData: true });
@@ -330,12 +336,18 @@ export class LiquidGlass {
     const rect = this.source.getBoundingClientRect();
     this.sourceRect = rect;
     this.containerRect = this.container?.getBoundingClientRect();
+    // Placed from the source's on-screen rect, which already includes any transform of its
+    // own (a bar centred with translate: -50%, say), so the copy mustn't apply it again
     Object.assign(copy.style, {
       position: "absolute",
       inset: "auto",
       left: "0",
       top: "0",
       margin: "0",
+      transform: "none",
+      translate: "none",
+      rotate: "none",
+      scale: "none",
       width: `${rect.width}px`,
       height: `${rect.height}px`,
     });
@@ -771,6 +783,9 @@ export class LiquidGlass {
     const waiting =
       this.shapeDirty || this.rectDirty || this.placeDirty || (this.copyDirty && this.#shown) || !this.inner;
     if (animating || buttonMoving || waiting) this.#raf = requestAnimationFrame((t) => this.#frame(t));
-    else this.#awake = false;
+    else {
+      this.#awake = false;
+      this.el.style.willChange = "auto";
+    }
   }
 }
