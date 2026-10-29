@@ -27,7 +27,10 @@ const scene = $("#scene");
 // Almost no glass behind the dock: a hint of bend, a faint rim, no dispersion or zoom.
 // It goes first so the lens copies it with its contents already in place.
 new LiquidGlass(scene, { anchor: $("#dock"), refraction: 3, frost: 0, chroma: 0, zoom: 1, rim: 0.2, tint: "rgb(0 0 0 / 0.3)" });
-const glass = new LiquidGlass(scene);
+// Phones and tablets get a smaller lens: every frame filters and repaints its whole area,
+// so cutting it roughly in half keeps the frame rate up on mobile GPUs
+const mobile = matchMedia("(max-width: 639px), (pointer: coarse)").matches;
+const glass = new LiquidGlass(scene, mobile ? { width: 200, height: 130, radius: 48, refraction: 30 } : {});
 
 initFps($("#fps-value"), $("#fps-graph"));
 
