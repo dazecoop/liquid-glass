@@ -24,10 +24,11 @@ const springs = (lens, move = MOVE) => {
 // far longer than the eye can see)
 const arrived = (lens) => Math.abs(lens.x.value - lens.x.target) <= 0.5 && Math.abs(lens.x.velocity) <= 30;
 
-// Clear glass, as UIKit's pressed selection: a thin hard rim, a little dispersion and zoom.
-// The dark look's highlight is dimmer and the glass a touch brighter, as UIKit's dark
+// Clear glass, as UIKit's pressed selection: a thin hard rim, a little dispersion and zoom,
+// and no frost, so the text it magnifies stays sharp (even a 1px frost read as fuzzy on a 3×
+// phone). The dark look's highlight is dimmer and the glass a touch brighter, as UIKit's dark
 // appearance is.
-const CLEAR = { frost: 1, fresnel: 0.15, saturation: 0, tint: "", rim: 0.45, body: 0, falloff: 0, lightAngle: -123.5 };
+const CLEAR = { frost: 0, fresnel: 0.15, saturation: 0, tint: "", rim: 0.45, body: 0, falloff: 0, lightAngle: -123.5 };
 export const LOOKS = {
   switch: {
     dark: { ...CLEAR, refraction: 25, bevel: 6, chroma: 0.21, zoom: 1.12, specular: 0.25, brightness: 0.03 },
@@ -38,10 +39,11 @@ export const LOOKS = {
     dark: { ...CLEAR, refraction: 28, bevel: 5, falloff: 4.5, chroma: 0.1, zoom: 1.1, specular: 0.25, brightness: 0.03, lightAngle: -140 },
     light: { ...CLEAR, refraction: 28, bevel: 5, falloff: 4.5, chroma: 0.1, zoom: 1.1, specular: 0.55, brightness: 0, lightAngle: -140 },
   },
-  // A little milk and a brighter rim, so a resting button reads on a flat background
+  // A little milk, a little frost and a brighter rim, so a resting button reads on a flat
+  // background
   button: {
-    dark: { ...CLEAR, refraction: 28, bevel: 5, chroma: 0.12, zoom: 1.08, specular: 0.25, brightness: 0.03, rim: 0.6, body: 0.12 },
-    light: { ...CLEAR, refraction: 28, bevel: 5, chroma: 0.12, zoom: 1.08, specular: 0.55, brightness: 0, rim: 0.6, body: 0.12 },
+    dark: { ...CLEAR, frost: 1, refraction: 28, bevel: 5, chroma: 0.12, zoom: 1.08, specular: 0.25, brightness: 0.03, rim: 0.6, body: 0.12 },
+    light: { ...CLEAR, frost: 1, refraction: 28, bevel: 5, chroma: 0.12, zoom: 1.08, specular: 0.55, brightness: 0, rim: 0.6, body: 0.12 },
   },
 };
 // addEventListener bound to an AbortSignal, so a component's destroy() removes them all
