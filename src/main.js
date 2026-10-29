@@ -73,23 +73,6 @@ const glass = new LiquidGlass(scene, SHAPE);
 
 initFps($("#fps-value"), $("#fps-graph"));
 
-// The header is liquid glass over the whole page. The page is a big copy, so changes re-copy
-// it at most four times a second.
-new LiquidGlass($("main"), {
-  anchor: $("#nav"),
-  throttle: 250,
-  refraction: 10,
-  frost: 4,
-  chroma: 0.25,
-  zoom: 1,
-  bevel: 16,
-  specular: 0.5,
-  fresnel: 0.5,
-  rim: 0.6,
-  saturation: 0.2,
-  tint: "rgb(0 0 0 / 0.22)",
-});
-
 // Developer panel, in its own section
 
 let imageUrl = null;
@@ -367,9 +350,18 @@ addEventListener("keydown", (e) => {
 });
 
 // Scrolling: the lens stays with the hero. Once its point scrolls out of it, the lens pops
-// like a bubble, and it swells back when the hero returns.
+// like a bubble, and it swells back when the hero returns. The page nav slides down once the
+// page has scrolled 100px.
 
-addEventListener("scroll", () => glass.show(lensWanted && overScene(glass.y.target), { pop: true }), { passive: true });
+const nav = $("#nav");
+function onScroll() {
+  glass.show(lensWanted && overScene(glass.y.target), { pop: true });
+  const shown = scrollY > 100;
+  nav.toggleAttribute("data-shown", shown);
+  nav.inert = !shown;
+}
+addEventListener("scroll", onScroll, { passive: true });
+onScroll();
 
 // Blocks rise into place once as they scroll in
 

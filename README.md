@@ -18,7 +18,6 @@ Built with vanilla JavaScript, SVG filters, [Vite](https://vite.dev) and [Tailwi
 - Press <kbd>L</kbd> to lock the lens in place (handy for screenshots)
 - Live controls for shape, glass and light, grouped in tabs
 - Built-in backgrounds, or upload / drag and drop your own image
-- A liquid glass header that refracts the page as it scrolls under it
 - The lens pops like a bubble when you scroll away from the hero, and swells back in when you return
 - A code section that generates a drop-in snippet with your current settings
 - Retina aware, touch friendly, keyboard nudging, respects `prefers-reduced-motion`
