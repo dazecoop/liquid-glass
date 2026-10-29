@@ -18,7 +18,9 @@ Built with vanilla JavaScript, SVG filters, [Vite](https://vite.dev) and [Tailwi
 - Press <kbd>L</kbd> to lock the lens in place (handy for screenshots)
 - Live controls for shape, glass and light, grouped in tabs
 - Built-in backgrounds, or upload / drag and drop your own image
-- Developer panel that generates a drop-in snippet with your current settings
+- A liquid glass header that refracts the page as it scrolls under it
+- The lens pops like a bubble when you scroll away from the hero, and swells back in when you return
+- A code section that generates a drop-in snippet with your current settings
 - Retina aware, touch friendly, keyboard nudging, respects `prefers-reduced-motion`
 
 ## How it works
@@ -58,7 +60,7 @@ npm works too: `npm install && npm run dev`.
 
 ## Use it on your own site
 
-Open the **Developer** tab on the right edge of the demo, tune the lens, then copy or download the snippet. It's an element to put your HTML in, plus a script with no dependencies and no build step.
+Tune the lens on the demo, then scroll to the **Code** section to copy or download the snippet. It's an element to put your HTML in, plus a script with no dependencies and no build step.
 
 If you use a bundler, copy [`src/glass.js`](src/glass.js) into your project instead:
 
@@ -94,12 +96,12 @@ glass.set(LiquidGlass.presets.dark);
 
 | Method | Description |
 | --- | --- |
-| `new LiquidGlass(source, options)` | Creates a lens over `source`. Pass `{ anchor: element }` to fill that element instead, `button: true` to make anchored glass respond to hover and press, plus any parameters below. |
+| `new LiquidGlass(source, options)` | Creates a lens over `source`. Options: `anchor` (an element to fill as its background), `container` (an element for the lens to live in, clipped to it), `button: true` (anchored glass responds to hover and press), `throttle` (re-copy a large source at most every this many ms), plus any parameters below. |
 | `LiquidGlass.presets` | `clear`, `frosted`, `dark`, `prism` and `dome`, each a set of parameters. |
 | `set(params)` | Updates any of the parameters below. |
 | `moveTo(x, y)` | Moves the lens to a point in viewport (client) coordinates. |
 | `press(down)` | Grows the lens slightly while `true`. |
-| `show(visible)` | Fades the lens in or out. `moveTo` shows it again. |
+| `show(visible, { pop })` | Fades the lens in or out. With `pop: true` it bursts like a bubble on the way out and swells back in. `moveTo` shows it again. |
 
 | Parameter | Default | Description |
 | --- | --- | --- |

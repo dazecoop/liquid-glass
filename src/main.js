@@ -73,14 +73,27 @@ const glass = new LiquidGlass(scene, SHAPE);
 
 initFps($("#fps-value"), $("#fps-graph"));
 
-// Developer drawer
+// The header is liquid glass over the whole page. The page is a big copy, so changes re-copy
+// it at most four times a second.
+new LiquidGlass($("main"), {
+  anchor: $("#nav"),
+  throttle: 250,
+  refraction: 10,
+  frost: 4,
+  chroma: 0.25,
+  zoom: 1,
+  bevel: 16,
+  specular: 0.5,
+  fresnel: 0.5,
+  rim: 0.6,
+  saturation: 0.2,
+  tint: "rgb(0 0 0 / 0.22)",
+});
+
+// Developer panel, in its own section
 
 let imageUrl = null;
-const dev = initDeveloper({
-  glass,
-  getImageUrl: () => imageUrl,
-  onToggle: (open) => $("#overlay").toggleAttribute("data-dev", open),
-});
+const dev = initDeveloper({ glass, getImageUrl: () => imageUrl });
 
 // Backgrounds
 
@@ -325,7 +338,7 @@ addEventListener("pointermove", (e) => {
   if (locked) return;
   if (!overScene(e.clientY)) {
     lensWanted = false;
-    glass.show(false);
+    glass.show(false, { pop: true });
     return;
   }
   moveLens(e.clientX, e.clientY);
@@ -353,17 +366,10 @@ addEventListener("keydown", (e) => {
   moveLens(glass.x.target + move[0], glass.y.target + move[1]);
 });
 
-// Scrolling: the lens stays with the hero, and the page nav arrives once the hero has gone
+// Scrolling: the lens stays with the hero. Once its point scrolls out of it, the lens pops
+// like a bubble, and it swells back when the hero returns.
 
-const nav = $("#nav");
-function onScroll() {
-  glass.show(lensWanted && overScene(glass.y.target));
-  const shown = scene.getBoundingClientRect().bottom < 56;
-  nav.toggleAttribute("data-shown", shown);
-  nav.inert = !shown;
-}
-addEventListener("scroll", onScroll, { passive: true });
-onScroll();
+addEventListener("scroll", () => glass.show(lensWanted && overScene(glass.y.target), { pop: true }), { passive: true });
 
 // Blocks rise into place once as they scroll in
 
@@ -397,10 +403,99 @@ const nearFeatures = new IntersectionObserver(
       const source = el.closest("[data-surface]");
       demos.set(el, new LiquidGlass(source, { anchor: el, button: "button" in el.dataset, ...LiquidGlass.presets[name], ...params }));
     }
+    initDome();
   },
   { rootMargin: "800px 0px" },
 );
 nearFeatures.observe($("#features"));
+
+// Dome: a lens living inside its tile. It follows the cursor, or a finger dragging it, and
+// springs home to the middle when let go.
+function initDome() {
+  const surface = $("#dome-surface");
+  const size = () => Math.round(surface.clientWidth * 0.5);
+  const d = size();
+  const dome = new LiquidGlass(surface, {
+    container: surface,
+    ...LiquidGlass.presets.dome,
+    chroma: 0.12,
+    refraction: 28,
+    width: d,
+    height: d,
+    radius: d / 2,
+  });
+  dome.x.snap(surface.clientWidth / 2);
+  dome.y.snap(surface.clientHeight / 2);
+  dome.show(true);
+
+  const follow = (x, y) => {
+    const r = surface.getBoundingClientRect();
+    dome.moveTo(Math.max(r.left, Math.min(x, r.right)), Math.max(r.top, Math.min(y, r.bottom)));
+  };
+  const home = () => {
+    const r = surface.getBoundingClientRect();
+    dome.moveTo(r.left + r.width / 2, r.top + r.height / 2);
+  };
+  new ResizeObserver(() => {
+    const d = size();
+    dome.set({ width: d, height: d, radius: d / 2 });
+    home();
+  }).observe(surface);
+
+  // The lens itself is the handle, so a swipe elsewhere on the tile still scrolls the page
+  Object.assign(dome.el.style, { pointerEvents: "auto", touchAction: "none", cursor: "grab" });
+  let dragging = false;
+  surface.addEventListener("pointermove", (e) => {
+    if (e.pointerType === "mouse" || dragging) follow(e.clientX, e.clientY);
+  });
+  surface.addEventListener("pointerleave", () => {
+    if (!dragging) home();
+  });
+  dome.el.addEventListener("pointerdown", (e) => {
+    dragging = true;
+    dome.el.setPointerCapture(e.pointerId);
+    dome.el.style.cursor = "grabbing";
+    dome.press(true);
+    follow(e.clientX, e.clientY);
+  });
+  const release = (e) => {
+    if (!dragging) return;
+    dragging = false;
+    dome.el.style.cursor = "grab";
+    dome.press(false);
+    if (e.pointerType !== "mouse") home();
+  };
+  dome.el.addEventListener("pointerup", release);
+  dome.el.addEventListener("pointercancel", release);
+}
+
+// Tone: chips for a few looks, sliders for the rest. Tone changes skip the map rebuild, so
+// dragging stays smooth.
+const toneChips = [...document.querySelectorAll("[data-tone]")];
+const toneSliders = [...document.querySelectorAll("#tone-saturation, #tone-brightness")];
+
+function paintTone() {
+  for (const input of toneSliders) {
+    const v = Number(input.value);
+    input.parentElement.querySelector("output").textContent = signed(v);
+    input.style.setProperty("--fill", `${((v - input.min) / (input.max - input.min)) * 100}%`);
+  }
+}
+
+function setTone(tone) {
+  for (const input of toneSliders) if (input.dataset.key in tone) input.value = tone[input.dataset.key];
+  paintTone();
+  demos.get($("#tone-demo"))?.set(tone);
+  const match = (chip) => {
+    const t = JSON.parse(chip.dataset.tone);
+    return toneSliders.every((input) => Math.abs(Number(input.value) - t[input.dataset.key]) < 0.005);
+  };
+  for (const chip of toneChips) chip.setAttribute("aria-checked", String(match(chip)));
+}
+
+for (const chip of toneChips) chip.addEventListener("click", () => setTone(JSON.parse(chip.dataset.tone)));
+for (const input of toneSliders) input.addEventListener("input", () => setTone({ [input.dataset.key]: Number(input.value) }));
+paintTone();
 
 // Lighting toggles
 for (const chip of document.querySelectorAll("[data-light]")) {
@@ -529,30 +624,3 @@ new IntersectionObserver(([entry]) => {
   howVisible = entry.isIntersecting;
   drawHow();
 }).observe($("#how"));
-
-// Get started
-
-// Scroll up first, then open: focusing the drawer mid-scroll would stop the scroll short
-$("#start-dev").addEventListener("click", () => {
-  let opened = false;
-  const open = () => {
-    if (opened) return;
-    opened = true;
-    dev.open();
-  };
-  addEventListener("scrollend", open, { once: true });
-  setTimeout(open, 1000);
-  scene.scrollIntoView();
-});
-
-$("#start-code").innerHTML = hljs.highlight(
-  `import { LiquidGlass } from "./glass.js";
-
-// A lens over everything inside <main>
-const glass = new LiquidGlass(document.querySelector("main"), LiquidGlass.presets.frosted);
-addEventListener("pointermove", (e) => glass.moveTo(e.clientX, e.clientY));
-
-// Or give a button a glass background that presses back
-new LiquidGlass(scene, { anchor: myButton, button: true });`,
-  { language: "javascript" },
-).value;

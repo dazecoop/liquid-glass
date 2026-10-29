@@ -3,9 +3,13 @@
 // Chrome, Firefox and Safari, unlike `backdrop-filter: url()`, which is Chrome only.
 //
 // Two modes:
-// - A lens that follows moveTo(), floating above the page.
+// - A lens that follows moveTo(), floating above the page, or inside an element
+//   ({ container }) so it scrolls with it and is clipped to it.
 // - Glass anchored to an element ({ anchor }), filling it as its background, with the
 //   element's own content on top. Its copy leaves the anchor out, so nothing is doubled.
+//
+// A big source, such as a whole page behind a header, can take { throttle } in ms: changes
+// then re-copy it at most that often.
 //
 // Safari quirks this works around:
 // - It drops an SVG filter entirely when the filtered content has GPU-composited layers, so
@@ -97,10 +101,13 @@ export class LiquidGlass {
     dome: { refraction: 50, frost: 0, chroma: 0.2, zoom: 1.35, bevel: 160, specular: 0.7, fresnel: 0.6, brightness: 0, saturation: 0.1, tint: "", rim: 1 },
   };
 
-  constructor(source, { anchor = null, button = false, ...params } = {}) {
+  constructor(source, { anchor = null, container = null, button = false, throttle = 0, ...params } = {}) {
     this.source = source;
     this.anchor = anchor;
+    this.container = anchor ? null : container;
     this.button = Boolean(button && anchor);
+    this.throttle = throttle;
+    this.syncedAt = -Infinity;
     this.params = {
       width: 280,
       height: 180,
@@ -149,8 +156,9 @@ export class LiquidGlass {
       this.anchor.style.isolation = "isolate";
       this.el.style.cssText += ";position:absolute;inset:0;z-index:-1;border-radius:inherit";
     } else {
-      this.el.style.cssText +=
-        ";position:fixed;left:0;top:0;z-index:2147483000;will-change:transform;opacity:0;transition:opacity .3s";
+      const position = this.container ? "absolute;z-index:1" : "fixed;z-index:2147483000";
+      this.el.style.cssText += `;position:${position};left:0;top:0;will-change:transform;opacity:0;transition:opacity .3s`;
+      if (this.container && getComputedStyle(this.container).position === "static") this.container.style.position = "relative";
     }
 
     this.frost = document.createElement("div");
@@ -170,7 +178,7 @@ export class LiquidGlass {
     this.frost.append(this.view);
     this.el.append(this.frost, this.rim);
     document.body.append(this.svg);
-    (this.anchor ?? document.body).prepend(this.el);
+    (this.anchor ?? this.container ?? document.body).prepend(this.el);
 
     if (this.anchor) {
       new ResizeObserver(() => {
@@ -244,6 +252,8 @@ export class LiquidGlass {
 
     // Anchored glass shows what's behind the anchor, so the anchor itself goes
     if (this.anchor && this.source.contains(this.anchor)) follow(copy, pathTo(this.source, this.anchor))?.remove();
+    // A lens inside its own source leaves itself out the same way
+    else if (this.source.contains(this.el)) follow(copy, pathTo(this.source, this.el))?.remove();
 
     // Glass inside the copy keeps its own copy, but no deeper, so copies can't nest forever
     for (const glass of copy.querySelectorAll("[data-glass]")) {
@@ -255,6 +265,7 @@ export class LiquidGlass {
 
     const rect = this.source.getBoundingClientRect();
     this.sourceRect = rect;
+    this.containerRect = this.container?.getBoundingClientRect();
     Object.assign(copy.style, {
       position: "absolute",
       inset: "auto",
@@ -417,7 +428,13 @@ export class LiquidGlass {
     const rows = [0, 1, 2].map((i) =>
       [...LUMA.map((l, j) => l * (1 - s) + (i === j ? s : 0)), 0, b].map((v) => +v.toFixed(4)).join(" "),
     );
-    return `<feColorMatrix type="matrix" values="${rows.join("  ")}  0 0 0 1 0" />`;
+    return `<feColorMatrix data-tone type="matrix" values="${rows.join("  ")}  0 0 0 1 0" />`;
+  }
+
+  // Tone is the filter's last step, so it can change without rebuilding the map
+  #retone() {
+    this.filter.querySelector("[data-tone]")?.remove();
+    this.filter.insertAdjacentHTML("beforeend", this.#tone());
   }
 
   // Frost blur, plus the button's hover and press state
@@ -452,6 +469,11 @@ export class LiquidGlass {
       top = snap(this.y.value - height / 2);
       this.el.style.transform =
         `translate(${left}px, ${top}px) scale(${s * this.stretchX.value}, ${s * this.stretchY.value})`;
+      // Inside a container the springs run in its coordinates; the copy needs the viewport's
+      if (this.container) {
+        left += this.containerRect.left;
+        top += this.containerRect.top;
+      }
     }
 
     // The copy sits unscaled around the lens centre, so the layer's zoom magnifies it there
@@ -461,6 +483,11 @@ export class LiquidGlass {
 
   // Moves the lens to a point in viewport (client) coordinates
   moveTo(x, y) {
+    if (this.container) {
+      const { left, top } = this.container.getBoundingClientRect();
+      x -= left;
+      y -= top;
+    }
     if (this.reducedMotion) {
       this.x.snap(x);
       this.y.snap(y);
@@ -468,7 +495,7 @@ export class LiquidGlass {
       this.x.target = x;
       this.y.target = y;
     }
-    this.el.style.opacity = "1";
+    this.show(true, { pop: true });
   }
 
   press(down) {
@@ -477,15 +504,81 @@ export class LiquidGlass {
   }
 
   set(params) {
+    const toneOnly = Object.keys(params).every((k) => k === "brightness" || k === "saturation");
     Object.assign(this.params, params);
-    this.shapeDirty = true;
+    if (toneOnly && !this.shapeDirty && this.filter.firstChild) this.#retone();
+    else this.shapeDirty = true;
   }
 
-  show(visible) {
+  // Fades the lens in or out. With { pop: true } it bursts like a bubble on the way out and
+  // swells back in.
+  show(visible, { pop = false } = {}) {
+    if (visible === this.visible) return;
+    this.visible = visible;
+    if (!pop || this.reducedMotion) {
+      this.el.style.transition = "opacity .3s";
+      this.el.style.opacity = visible ? "1" : "0";
+      return;
+    }
+    this.el.style.transition = "none";
     this.el.style.opacity = visible ? "1" : "0";
+    // The `scale` property composes with the transform the frame loop writes
+    const frames = visible
+      ? [{ opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1 }]
+      : [{ opacity: 1, scale: 1 }, { opacity: 0, scale: 1.3 }];
+    this.el.animate(frames, visible ? { duration: 420, easing: "cubic-bezier(.34,1.56,.64,1)" } : { duration: 140, easing: "ease-out" });
+    if (!visible) this.#burst();
+  }
+
+  // A ring flash and droplets flying off the rim
+  #burst() {
+    const r = this.el.getBoundingClientRect();
+    if (!r.width) return;
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    const layer = this.container ?? document.body;
+    const origin = this.container ? this.container.getBoundingClientRect() : { left: 0, top: 0 };
+    const position = this.container ? "absolute" : "fixed";
+    const z = this.container ? 2 : 2147483000;
+    const add = (css, frames, timing) => {
+      const el = document.createElement("div");
+      el.setAttribute("aria-hidden", "true");
+      el.style.cssText = `position:${position};pointer-events:none;z-index:${z};${css}`;
+      layer.append(el);
+      el.animate(frames, { fill: "forwards", ...timing }).finished.then(() => el.remove());
+    };
+
+    add(
+      `left:${r.left - origin.left}px;top:${r.top - origin.top}px;width:${r.width}px;height:${r.height}px;` +
+        `border-radius:${this.el.style.borderRadius};box-shadow:inset 0 0 0 1.5px rgb(255 255 255 / .7)`,
+      [{ opacity: 0.9, scale: 1 }, { opacity: 0, scale: 1.4 }],
+      { duration: 280, easing: "cubic-bezier(.2,.7,.3,1)" },
+    );
+
+    const count = 14;
+    for (let i = 0; i < count; i++) {
+      const angle = (i / count) * Math.PI * 2 + Math.random() * 0.4;
+      const ux = Math.cos(angle);
+      const uy = Math.sin(angle);
+      const size = 4 + Math.random() * 6;
+      const reach = 24 + Math.random() * 40;
+      const x = cx + (ux * r.width) / 2 - origin.left - size / 2;
+      const y = cy + (uy * r.height) / 2 - origin.top - size / 2;
+      add(
+        `left:${x}px;top:${y}px;width:${size}px;height:${size}px;border-radius:50%;` +
+          "background:radial-gradient(circle at 35% 35%, rgb(255 255 255 / .95), rgb(255 255 255 / .3) 60%, rgb(255 255 255 / .1));" +
+          "box-shadow:0 0 0 .5px rgb(255 255 255 / .4)",
+        [
+          { opacity: 1, transform: "translate(0, 0) scale(1)" },
+          { opacity: 0, transform: `translate(${ux * reach}px, ${uy * reach + 10}px) scale(.3)` },
+        ],
+        { duration: 420 + Math.random() * 200, easing: "cubic-bezier(.2,.7,.3,1)" },
+      );
+    }
   }
 
   #frame(now) {
+    requestAnimationFrame((t) => this.#frame(t));
     const dt = Math.min((now - this.last) / 1000, 1 / 30);
     this.last = now;
 
@@ -509,13 +602,20 @@ export class LiquidGlass {
       this.#applyButton();
     }
 
-    const changed = this.copyDirty || this.shapeDirty || this.rectDirty;
-    if (this.copyDirty) this.#syncCopy();
-    else if (this.rectDirty) this.sourceRect = this.source.getBoundingClientRect();
+    const sync = this.copyDirty && now - this.syncedAt >= this.throttle;
+    const changed = sync || this.shapeDirty || this.rectDirty;
+    if (sync) {
+      this.#syncCopy();
+      this.syncedAt = now;
+    } else if (this.rectDirty) {
+      this.sourceRect = this.source.getBoundingClientRect();
+      this.containerRect = this.container?.getBoundingClientRect();
+    }
     this.rectDirty = false;
-    if (this.shapeDirty) this.#buildShape();
+    // An anchor can measure zero before it's laid out; wait until it has a size
+    if (this.shapeDirty && this.params.width >= 1 && this.params.height >= 1) this.#buildShape();
+    if (!this.inner) return;
     if (animating || changed || this.placeDirty) this.#place();
     this.placeDirty = animating;
-    requestAnimationFrame((t) => this.#frame(t));
   }
 }

@@ -64,19 +64,20 @@ const TABS = {
   module: { language: "javascript", file: "glass.js" },
 };
 
-export function initDeveloper({ glass, getImageUrl, onToggle }) {
+// The panel lives in its own section. It re-renders as the lens is tuned, but only while
+// it's on screen: highlighting the whole module on every slider tick isn't free.
+export function initDeveloper({ glass, getImageUrl }) {
   const $ = (sel) => document.querySelector(sel);
-  const drawer = $("#dev");
-  const openButton = $("#dev-open");
-  const closeButton = $("#dev-close");
+  const panel = $("#dev");
   const code = $("#dev-code");
   const note = $("#dev-note");
   const copyButton = $("#dev-copy");
   const copyLabel = copyButton.querySelector("span");
-  const tabs = [...drawer.querySelectorAll("[role=tab]")];
+  const tabs = [...panel.querySelectorAll("[role=tab]")];
 
   let activeTab = "snippet";
-  let isOpen = false;
+  let visible = false;
+  let stale = true;
   let copyTimer;
 
   const source = () => {
@@ -85,11 +86,18 @@ export function initDeveloper({ glass, getImageUrl, onToggle }) {
   };
 
   function render() {
-    if (!isOpen) return;
+    stale = true;
+    if (!visible) return;
+    stale = false;
     const { language } = TABS[activeTab];
     code.innerHTML = hljs.highlight(source(), { language }).value;
     note.hidden = activeTab !== "snippet" || Boolean(getImageUrl());
   }
+
+  new IntersectionObserver(([entry]) => {
+    visible = entry.isIntersecting;
+    if (visible && stale) render();
+  }).observe(panel);
 
   function selectTab(tab) {
     activeTab = tab.dataset.tab;
@@ -98,29 +106,9 @@ export function initDeveloper({ glass, getImageUrl, onToggle }) {
       t.setAttribute("aria-selected", String(selected));
       t.tabIndex = selected ? 0 : -1;
     }
-    code.parentElement.scrollTop = 0;
+    code.parentElement.parentElement.scrollTop = 0;
     render();
   }
-
-  function setOpen(open) {
-    isOpen = open;
-    drawer.toggleAttribute("data-open", open);
-    drawer.inert = !open;
-    openButton.setAttribute("aria-expanded", String(open));
-    onToggle?.(open);
-    if (open) {
-      render();
-      closeButton.focus({ preventScroll: true });
-    } else {
-      openButton.focus({ preventScroll: true });
-    }
-  }
-
-  openButton.addEventListener("click", () => setOpen(true));
-  closeButton.addEventListener("click", () => setOpen(false));
-  addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && isOpen) setOpen(false);
-  });
 
   for (const tab of tabs) {
     tab.addEventListener("click", () => selectTab(tab));
@@ -151,5 +139,5 @@ export function initDeveloper({ glass, getImageUrl, onToggle }) {
     URL.revokeObjectURL(link.href);
   });
 
-  return { render, open: () => setOpen(true), get isOpen() { return isOpen; } };
+  return { render };
 }

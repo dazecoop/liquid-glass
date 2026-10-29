@@ -85,6 +85,9 @@
   .code {
     @apply rounded-md bg-white/10 px-1.5 py-0.5 font-mono text-[0.85em] text-[#f5f5f7];
   }
+  .navlink {
+    @apply rounded-full px-3 py-1.5 text-white/85 transition hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-white;
+  }
   .step {
     @apply flex h-full flex-col rounded-[22px] bg-[#161617] p-5 transition hover:bg-[#1d1d1f] focus-visible:outline-2 focus-visible:outline-[#2997ff];
   }
