@@ -353,15 +353,13 @@ addEventListener("keydown", (e) => {
 });
 
 // Scrolling: the lens stays with the hero. Once its point scrolls out of it, the lens pops
-// like a bubble, and it swells back when the hero returns. The page nav slides down once the
-// page has scrolled 100px.
+// like a bubble, and it swells back when the hero returns. The page nav is solid black at the
+// very top, and turns to frosted glass once the page has scrolled 40px.
 
 const nav = $("#nav");
 function onScroll() {
   glass.show(lensWanted && overScene(glass.y.target), { pop: true });
-  const shown = scrollY > 100;
-  nav.toggleAttribute("data-shown", shown);
-  nav.inert = !shown;
+  nav.toggleAttribute("data-scrolled", scrollY > 40);
 }
 addEventListener("scroll", onScroll, { passive: true });
 onScroll();

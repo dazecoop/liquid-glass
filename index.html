@@ -34,8 +34,8 @@
     <script type="module" src="/src/main.js"></script>
   </head>
   <body class="bg-black font-sans text-white antialiased">
-    <!-- Page nav: a translucent bar that slides down once the page is scrolled -->
-    <nav id="nav" aria-label="Page" inert class="material fixed inset-x-0 top-0 z-2147483002 -translate-y-full opacity-0 transition duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] data-shown:translate-y-0 data-shown:opacity-100 motion-reduce:translate-y-0 motion-reduce:transition-opacity">
+    <!-- Page nav: solid black at the top, turning to translucent frosted glass once scrolled -->
+    <nav id="nav" aria-label="Page" class="site-nav fixed inset-x-0 top-0 z-2147483002">
       <div class="mx-auto flex h-12 max-w-5xl items-center justify-between px-5">
         <a href="#scene" class="text-[15px] font-semibold tracking-[-0.01em]">Liquid Glass</a>
         <div class="flex items-center gap-5 text-xs">
@@ -57,6 +57,11 @@
 
     <!-- Title -->
     <div class="absolute inset-x-0 top-16 bottom-75 flex touch-none flex-col justify-center px-[max(1rem,5.5vw)] select-text max-sm:bottom-35">
+      <!-- Frame rate. data-glass-skip: its per-frame updates don't make the lens re-copy the hero -->
+      <div aria-hidden="true" data-glass-skip class="glass mb-5 flex w-fit items-center gap-2.5 rounded-xl py-1.5 pr-1.5 pl-3 text-xs text-white/90 select-none">
+        <span class="tabular-nums"><span id="fps-value" class="inline-block w-[3ch] text-right font-semibold">–</span> fps</span>
+        <canvas id="fps-graph" class="h-6 w-24 rounded-md bg-black/25"></canvas>
+      </div>
       <p class="text-[clamp(0.6rem,1.1vw,0.95rem)] font-semibold tracking-[0.18em] text-white/60">REAL HTML · EVERY BROWSER · NO DEPENDENCIES</p>
       <h1 id="title" class="mt-2 w-fit text-[clamp(3.5rem,min(11vw,15dvh),9rem)] leading-[0.93] font-bold tracking-[-0.033em]">Liquid<br />Glass</h1>
       <p class="mt-4 text-[clamp(1rem,1.7vw,1.4rem)] text-white/75">This text is real. Select it, Cmd+F it, click the buttons.</p>
@@ -71,7 +76,7 @@
       </div>
     </div>
 
-    <div id="overlay" class="pointer-events-none absolute inset-0 flex flex-col justify-between p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">
+    <div id="overlay" class="pointer-events-none absolute inset-x-0 top-12 bottom-0 flex flex-col justify-between p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">
       <!-- Header -->
       <header class="flex items-start justify-between gap-4">
         <p id="hint" class="glass ml-auto rounded-full px-4 py-2 text-sm whitespace-nowrap text-white/90 transition duration-700">
@@ -578,7 +583,7 @@
           <h2 class="display">How it compares.</h2>
           <p class="lede mx-auto mt-6 max-w-2xl">Liquid glass on the web, side by side. <strong>Each takes a different path to the same look</strong>, and each path has its trade-offs.</p>
         </header>
-        <div data-reveal class="tile mt-14 overflow-x-auto [scrollbar-color:rgb(255_255_255/0.2)_transparent] [scrollbar-width:thin]">
+        <div data-reveal class="tile relative mt-14 overflow-x-auto [scrollbar-color:rgb(255_255_255/0.2)_transparent] [scrollbar-width:thin]">
           <table class="w-full min-w-[920px] border-collapse text-left">
             <caption class="sr-only">Feature comparison of liquid glass libraries for the web</caption>
             <thead>
@@ -891,14 +896,12 @@
       <div class="mx-auto max-w-5xl border-t border-white/10 pt-6 text-xs leading-relaxed text-[#86868b] text-center">
         <p>Inspired by <a href="https://codepen.io/shingidad/pen/jEPxMgW" target="_blank" rel="noopener noreferrer" class="text-[#d2d2d7] hover:underline">this CodePen by shingidad</a>. Lighting, tone, presets and button mode adapted from <a href="https://github.com/ybouane/liquidglass" target="_blank" rel="noopener noreferrer" class="text-[#d2d2d7] hover:underline">ybouane/liquidglass</a>. Photos from <a href="https://www.pexels.com" target="_blank" rel="noopener noreferrer" class="text-[#d2d2d7] hover:underline">Pexels</a>.</p>
         <p>Not affiliated with Apple.</p>
+        <a href="https://dazemx.com" target="_blank" rel="noopener noreferrer" title="Built by dazemx" class="mx-auto mt-8 block w-fit rounded-md opacity-80 transition hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2997ff]">
+          <img src="https://dazemx.com/built-by.dark-bg.png" alt="Built by dazemx" width="69" height="32" loading="lazy" decoding="async" class="block h-8 w-auto" />
+        </a>
       </div>
     </footer>
     </main>
 
-    <!-- Frame rate, outside the scene so its updates don't make the glass re-copy the page -->
-    <div aria-hidden="true" class="glass pointer-events-none absolute top-[max(1rem,env(safe-area-inset-top))] left-4 z-2147483001 flex items-center gap-2.5 rounded-xl py-1.5 pr-1.5 pl-3 text-xs text-white/90 sm:top-6 sm:left-6">
-      <span class="tabular-nums"><span id="fps-value" class="inline-block w-[3ch] text-right font-semibold">–</span> fps</span>
-      <canvas id="fps-graph" class="h-6 w-24 rounded-md bg-black/25"></canvas>
-    </div>
   </body>
 </html>

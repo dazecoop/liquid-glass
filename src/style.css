@@ -160,6 +160,32 @@
   .detail-d {
     @apply mt-2 text-[15px] leading-normal text-pretty text-[#86868b];
   }
+  /* The page nav: solid black at the very top, frosted glass once scrolled */
+  .site-nav {
+    background: rgb(0 0 0);
+    -webkit-backdrop-filter: blur(0) saturate(100%);
+    backdrop-filter: blur(0) saturate(100%);
+    box-shadow: 0 1px 0 rgb(255 255 255 / 0);
+    transition:
+      background-color 0.4s ease,
+      backdrop-filter 0.4s ease,
+      -webkit-backdrop-filter 0.4s ease,
+      box-shadow 0.4s ease;
+  }
+  .site-nav[data-scrolled] {
+    background: rgb(22 22 23 / 0.72);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    box-shadow: 0 1px 0 rgb(255 255 255 / 0.08);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .site-nav[data-scrolled] {
+      background: rgb(22 22 23);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+  }
+
   /* Use it anywhere: the install guide, the component code and the reference */
   .dev-tab {
     @apply shrink-0 rounded-full px-2.5 py-1.5 text-white/60 sm:px-4 transition hover:text-white focus-visible:outline-2 focus-visible:outline-white aria-selected:bg-white/15 aria-selected:text-white;
