@@ -4,7 +4,7 @@ A "liquid glass" lens that refracts, frosts and splits the light of real HTML be
 
 Built with vanilla JavaScript, SVG filters, [Vite](https://vite.dev) and [Tailwind CSS](https://tailwindcss.com).
 
-![Liquid Glass lens over a night-sky lake scene, with the tuning controls below](docs/animation.gif)
+![Liquid Glass lens over a night-sky lake scene, with the tuning controls below](https://raw.githubusercontent.com/dazecoop/liquid-glass/main/docs/animation.gif)
 
 > [!NOTE]
 > Live demo: [glass.dazemx.com](https://glass.dazemx.com/)
@@ -143,6 +143,8 @@ No install and no build step. The script defines one global, `LiquidGlass`:
 You can also tune the lens on the [demo](https://glass.dazemx.com/) and copy the code from its **Use it anywhere** section, written for React, JavaScript, a script tag, or as one self-contained file.
 
 ## UI components
+
+![The switch, segmented switch and tab bar dissolving into glass as they're pressed and dragged, in light and dark](https://raw.githubusercontent.com/dazecoop/liquid-glass/main/docs/animation-ui.gif)
 
 A switch, a segmented switch, a floating tab bar and a glass button, after iOS 26. Import `style.css` once. In React, use the components above. In HTML, write the markup and call `initComponents()`:
 
