@@ -164,14 +164,15 @@
      the large viewport, and its content sits in a "chin" above the small one, so it stays
      where the toolbar leaves it visible. On desktop the two viewports match and the chin is
      nothing. Safari 26 on iPhone ends 100lvh 58px short of the edge (measured in the iOS 26
-     Simulator for tck-plastering), so there the hero adds those 58px. */
-  #scene {
+     Simulator for tck-plastering), so there the hero adds those 58px. A class, not #scene:
+     the lens copies the hero without its ids, and the copy needs --chin too. */
+  .hero {
     --hero-h: 100lvh;
     --chin: calc(var(--hero-h) - 100svh);
     height: var(--hero-h);
   }
   @media (max-width: 39.99rem) {
-    :where([data-os="ios"][data-browser="safari"]) #scene {
+    :where([data-os="ios"][data-browser="safari"]) .hero {
       --hero-h: calc(100lvh + 58px);
     }
   }
