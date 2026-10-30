@@ -52,6 +52,12 @@
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
+  /* Holding it drags the glass: not iOS's link preview, nor its lift to drag */
+  -webkit-touch-callout: none;
+}
+.lg-switch *,
+.lg-segment * {
+  -webkit-user-drag: none;
 }
 .lg-switch:focus-visible,
 .lg-segment button:focus-visible {
@@ -176,6 +182,11 @@
   touch-action: pan-y;
   user-select: none;
   -webkit-user-select: none;
+  /* Holding a tab drags the lens: not iOS's link preview, nor its lift to drag the link */
+  -webkit-touch-callout: none;
+}
+.lg-tabs * {
+  -webkit-user-drag: none;
 }
 .lg-tabs::before {
   content: "";

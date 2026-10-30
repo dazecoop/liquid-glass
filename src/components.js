@@ -219,6 +219,8 @@ export class GlassSwitch {
   #events() {
     const root = this.root;
     const on = listener(this.abort.signal);
+    // Holding it drags the glass: no long-press menu (iOS's is off in the stylesheet)
+    on(root, "contextmenu", (e) => e.preventDefault());
     // A drag has already chosen, so the click that ends it is ignored
     let dragged = false;
     on(root, "click", () => {
@@ -308,6 +310,9 @@ export class GlassTabBar {
     this.grow = grow;
     this.press = press;
     this.tabs = [...root.querySelectorAll(":scope > a, :scope > button")];
+    // Holding a tab drags the lens, not the link (iOS lifts a link to drag it otherwise)
+    this.undrag = this.tabs.filter((t) => t.tagName === "A" && !t.hasAttribute("draggable"));
+    for (const t of this.undrag) t.draggable = false;
     this.pill = root.querySelector(":scope > .lg-pill");
     this.glow = root.querySelector(".lg-glow");
     this.pressedId = null;
@@ -400,6 +405,7 @@ export class GlassTabBar {
     this.abort.abort();
     this.lens.destroy();
     this.root.classList.remove("lensing", "pressing");
+    for (const t of this.undrag) t.removeAttribute("draggable");
   }
 
   #events() {
@@ -407,6 +413,8 @@ export class GlassTabBar {
     const on = listener(this.abort.signal);
     const local = (e) => e.clientX - root.getBoundingClientRect().left - root.clientLeft;
     const clampX = (x) => clamp(x, this.centre(this.tabs[0]), this.centre(this.tabs.at(-1)));
+    // No long-press menu (iOS's is off in the stylesheet)
+    on(root, "contextmenu", (e) => e.preventDefault());
     const tabAt = (x) =>
       this.tabs.reduce((a, b) => (Math.abs(this.centre(b) - x) < Math.abs(this.centre(a) - x) ? b : a));
     const glowAt = (e) => {
