@@ -1,6 +1,6 @@
 {
   "name": "@dazecoop/liquid-glass",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A liquid glass lens that refracts, frosts and splits the light of real HTML behind it, plus iOS 26 style switches, tab bars and buttons. Vanilla JS, with React bindings.",
   "keywords": [
     "liquid-glass",
