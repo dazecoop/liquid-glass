@@ -8,37 +8,10 @@ document.documentElement.classList.add("js");
 
 const pexels = (id) => `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb`;
 
-const BACKGROUNDS = [
-  { id: 268533, label: "Lake" },
-  { id: 2662116, label: "Moraine" },
-  { id: 3408744, label: "Aurora" },
-  { id: 1323550, label: "Haze" },
-  { id: 3225517, label: "Canyon" },
-];
+// One fixed hero backdrop; drag-and-drop still lets you look through the glass at your own image
+const HERO_BG = 268533;
 
-const percent = (v) => `${Math.round(v * 100)}%`;
 const signed = (v) => `${v > 0 ? "+" : ""}${Math.round(v * 100)}%`;
-
-const GROUPS = [
-  { key: "shape", label: "Shape" },
-  { key: "glass", label: "Glass" },
-  { key: "light", label: "Light" },
-];
-
-const SLIDERS = [
-  { group: "shape", key: "width", label: "Width", min: 120, max: 520, step: 1, unit: "px" },
-  { group: "shape", key: "height", label: "Height", min: 80, max: 400, step: 1, unit: "px" },
-  { group: "shape", key: "radius", label: "Corners", min: 0, max: 200, step: 1, unit: "px" },
-  { group: "shape", key: "bevel", label: "Bevel", min: 4, max: 160, step: 1, unit: "px" },
-  { group: "glass", key: "refraction", label: "Refraction", min: 0, max: 120, step: 1, unit: "px" },
-  { group: "glass", key: "frost", label: "Frost", min: 0, max: 24, step: 0.5, unit: "px" },
-  { group: "glass", key: "chroma", label: "Dispersion", min: 0, max: 1, step: 0.01, format: percent },
-  { group: "glass", key: "zoom", label: "Zoom", min: 0.8, max: 1.6, step: 0.01, format: (v) => `${v.toFixed(2)}×` },
-  { group: "light", key: "specular", label: "Specular", min: 0, max: 1, step: 0.01, format: percent },
-  { group: "light", key: "fresnel", label: "Fresnel", min: 0, max: 1, step: 0.01, format: percent },
-  { group: "light", key: "brightness", label: "Brightness", min: -0.5, max: 0.5, step: 0.01, format: signed },
-  { group: "light", key: "saturation", label: "Saturation", min: -1, max: 1, step: 0.01, format: signed },
-];
 
 const PRESETS = [
   { key: "clear", label: "Clear" },
@@ -79,7 +52,7 @@ initFps($("#fps-value"), $("#fps-graph"));
 let imageUrl = null;
 const dev = initDeveloper({ glass, getImageUrl: () => imageUrl });
 
-// Backgrounds
+// Background: one fixed image, with drag-and-drop to look through the glass at your own
 
 const bg = $("#bg");
 let uploadUrl;
@@ -91,37 +64,14 @@ async function showImage(src) {
   bg.src = src;
 }
 
-const backgroundsEl = $("#backgrounds");
-let currentButton;
-
-function select(button, url = null) {
-  currentButton?.setAttribute("aria-checked", "false");
-  button?.setAttribute("aria-checked", "true");
-  currentButton = button;
+function select(url) {
   imageUrl = url;
   dev.render();
 }
 
-for (const item of BACKGROUNDS) {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.role = "radio";
-  button.ariaLabel = item.label;
-  button.title = item.label;
-  button.setAttribute("aria-checked", "false");
-  button.className =
-    "size-11 shrink-0 overflow-hidden rounded-xl ring-2 ring-transparent ring-offset-2 ring-offset-transparent transition hover:scale-105 active:scale-95 aria-checked:ring-white focus-visible:outline-none focus-visible:ring-white/70";
-  button.innerHTML = `<img src="${pexels(item.id)}&w=120&h=120&fit=crop" alt="" class="size-full object-cover" draggable="false" />`;
-  button.addEventListener("click", () => {
-    if (button === currentButton) return;
-    const url = `${pexels(item.id)}&w=2560`;
-    select(button, url);
-    showImage(url);
-  });
-  backgroundsEl.append(button);
-}
-
-backgroundsEl.firstElementChild.click();
+const heroUrl = `${pexels(HERO_BG)}&w=2560`;
+select(heroUrl);
+showImage(heroUrl);
 
 async function useFile(file) {
   if (!file?.type.startsWith("image/")) return;
@@ -131,11 +81,6 @@ async function useFile(file) {
   await showImage(uploadUrl);
   if (previous) URL.revokeObjectURL(previous);
 }
-
-$("#upload").addEventListener("change", (e) => {
-  useFile(e.target.files[0]);
-  e.target.value = "";
-});
 
 // Drag and drop
 
@@ -156,24 +101,21 @@ addEventListener("drop", (e) => {
   useFile(e.dataTransfer.files[0]);
 });
 
-// Presets, then sliders in three groups
+// Presets: tap a look and the lens takes it
 
 const presetsEl = $("#presets");
 const presetButtons = new Map();
 let preset = "clear";
 
-// Moving a slider leaves every preset, so the row says "Custom" rather than claiming one
 function markPreset(key) {
   preset = key;
   for (const [k, button] of presetButtons) button.setAttribute("aria-checked", String(k === key));
-  $("#preset-custom").hidden = key !== null;
 }
 
 function applyPreset(key) {
   const look = LiquidGlass.presets[key];
   glass.set(key === "dome" ? { ...look, ...DOME } : { ...SHAPE, ...look });
   markPreset(key);
-  syncSliders();
   dev.render();
 }
 
@@ -189,89 +131,6 @@ for (const p of PRESETS) {
   presetsEl.append(button);
 }
 markPreset(preset);
-
-const slidersEl = $("#sliders");
-const sliders = [];
-for (const s of SLIDERS) {
-  const id = `slider-${s.key}`;
-  const format = s.format ?? ((v) => `${v}${s.unit}`);
-  const wrap = document.createElement("div");
-  wrap.dataset.group = s.group;
-  wrap.innerHTML = `
-    <div class="mb-1 flex items-baseline justify-between text-xs">
-      <label for="${id}" class="font-medium text-white/80">${s.label}</label>
-      <output for="${id}" class="text-white/50 tabular-nums"></output>
-    </div>
-    <input id="${id}" type="range" autocomplete="off" class="range" min="${s.min}" max="${s.max}" step="${s.step}" />
-  `;
-  const input = wrap.querySelector("input");
-  const output = wrap.querySelector("output");
-  const paint = () => {
-    const value = Number(input.value);
-    output.textContent = format(value);
-    input.style.setProperty("--fill", `${((value - s.min) / (s.max - s.min)) * 100}%`);
-  };
-  const sync = () => {
-    input.value = glass.params[s.key];
-    paint();
-  };
-  input.addEventListener("input", () => {
-    paint();
-    glass.set({ [s.key]: Number(input.value) });
-    markPreset(null);
-  });
-  sync();
-  sliders.push(sync);
-  slidersEl.append(wrap);
-}
-slidersEl.addEventListener("input", () => dev.render());
-
-function syncSliders() {
-  for (const sync of sliders) sync();
-}
-
-const groupsEl = $("#groups");
-const groupTabs = GROUPS.map((g) => {
-  const tab = document.createElement("button");
-  tab.type = "button";
-  tab.role = "tab";
-  tab.textContent = g.label;
-  tab.dataset.group = g.key;
-  tab.className =
-    "rounded-full px-3 py-1 text-white/60 transition hover:text-white aria-selected:bg-white/15 aria-selected:text-white focus-visible:outline-2 focus-visible:outline-white";
-  tab.addEventListener("click", () => showGroup(g.key));
-  tab.addEventListener("keydown", (e) => {
-    const step = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
-    if (!step) return;
-    const next = groupTabs[(groupTabs.indexOf(tab) + step + groupTabs.length) % groupTabs.length];
-    next.focus();
-    showGroup(next.dataset.group);
-  });
-  groupsEl.append(tab);
-  return tab;
-});
-
-function showGroup(key) {
-  for (const tab of groupTabs) {
-    const selected = tab.dataset.group === key;
-    tab.setAttribute("aria-selected", String(selected));
-    tab.tabIndex = selected ? 0 : -1;
-  }
-  for (const wrap of slidersEl.children) wrap.hidden = wrap.dataset.group !== key;
-}
-showGroup("shape");
-
-const toggle = $("#toggle");
-const controls = $("#controls");
-toggle.addEventListener("click", () => {
-  const open = toggle.getAttribute("aria-expanded") !== "true";
-  toggle.setAttribute("aria-expanded", String(open));
-  controls.toggleAttribute("data-collapsed", !open);
-  controls.inert = !open;
-});
-
-// Start collapsed on small screens so the lens has room
-if (matchMedia("(max-width: 639px)").matches) toggle.click();
 
 // Real buttons under the glass
 
@@ -331,7 +190,7 @@ addEventListener("pointermove", (e) => {
   hintTimer ??= setTimeout(() => hint.classList.add("opacity-0", "-translate-y-2"), 1200);
 });
 
-// Press only off the controls, so dragging a slider doesn't squash the lens
+// Press only off the controls, so tapping a preset doesn't squash the lens
 addEventListener("pointerdown", (e) => {
   if (locked || isUi(e) || !scene.contains(e.target)) return;
   moveLens(e.clientX, e.clientY);
